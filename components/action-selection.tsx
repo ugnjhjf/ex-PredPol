@@ -127,7 +127,6 @@ export default function ActionSelection({
         "Covers more ground than traditional patrols",
         "Enables faster response to incidents",
         "Can increase false arrests due to visual identification limitations",
-        "Triggers privacy concerns in minority communities"
       ]
     },
     {
@@ -139,7 +138,6 @@ export default function ActionSelection({
         "Higher error rates for women and darker-skinned individuals",
         "More acceptable in whiter, wealthier areas",
         "Can significantly damage trust in diverse communities",
-        "Compounds existing inequities through algorithmic bias"
       ]
     },
   ]
@@ -598,7 +596,7 @@ export default function ActionSelection({
                       <div className="grid gap-0.5">
                         <div className="flex items-center gap-1">
                           <span className="mr-0.5 text-base">{action.emoji}</span>
-                          <Label htmlFor={action.id} className={`font-medium text-xs ${(isImplemented || isFacialRecWithoutCCTV) ? "text-muted-foreground" : ""}`}>
+                          <Label htmlFor={action.id} className={`font-medium text-sm ${(isImplemented || isFacialRecWithoutCCTV) ? "text-muted-foreground" : ""}`}>
                             {action.title}
                           </Label>
                           {isImplemented && (
