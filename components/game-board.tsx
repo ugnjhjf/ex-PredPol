@@ -280,7 +280,7 @@ export default function GameBoard({
             onClick={() => setActiveTab("performance")}
           >
             <span className="mr-2">📈</span>
-            Performance
+            Data Analytics
           </Button>
           <Button 
             variant={activeTab === "log" ? "default" : "ghost"} 
@@ -878,7 +878,7 @@ export default function GameBoard({
           {/* Performance Tab Content */}
           {activeTab === "performance" && (
             <div className="h-full overflow-auto">
-              <PerformanceCharts 
+              <DataAnalytics 
                 gameLog={gameLog} 
                 getDistrictName={getDistrictName} 
                 currentRound={currentRound}
