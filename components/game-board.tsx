@@ -43,6 +43,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
+import { DataAnalytics } from "@/components/data-analytics"
 
 // Add district styling variables
 const districtColors = {
