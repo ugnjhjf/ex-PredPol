@@ -394,206 +394,206 @@ export default function GameResults({ metrics, onReset }) {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[90vh] p-4">
-      <Card className="w-full max-w-5xl">
-        <CardHeader>
-          <CardTitle className="text-3xl text-center">Policing Strategy Evaluation</CardTitle>
-          <CardDescription className="text-center text-lg mb-4">Analysis of your 10-round policing strategy</CardDescription>
-          
-          {/* Score overview with grade */}
-          <div className="flex flex-col items-center mt-4 space-y-2">
-            <div className="flex items-center gap-3">
-              <div className={`
-                w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold
-                ${totalScore >= 70 ? "bg-green-100 text-green-800" : 
-                  totalScore >= 50 ? "bg-yellow-100 text-yellow-800" : 
-                  "bg-red-100 text-red-800"}
-              `}>
-                {scoreGrade.letter}
-              </div>
-              <div>
-                <h3 className="text-2xl font-bold">{totalScore}/100 Points</h3>
-                <p className="text-lg">{scoreGrade.label} Performance</p>
-              </div>
-            </div>
-            <p className="text-center max-w-xl">{scoreGrade.description}</p>
-          </div>
-        </CardHeader>
-        
-        <CardContent className="space-y-6">
-          {/* Detailed score breakdown table */}
-          <div>
-            <h3 className="text-xl font-semibold mb-4">Score Breakdown</h3>
-            <Table>
-              <TableCaption>Detailed analysis of your policing strategy across key metrics</TableCaption>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-1/4">Category</TableHead>
-                  <TableHead className="w-1/6 text-center">Score</TableHead>
-                  <TableHead>Analysis</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {Object.values(scoreBreakdown).map((category) => (
-                  <TableRow key={category.title}>
-                    <TableCell className="font-medium">
-                      <div>{category.title}</div>
-                      <div className="text-xs text-muted-foreground">{category.description}</div>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Badge 
-                        variant={category.points >= category.maxPoints * 0.7 ? "success" : 
-                                category.points >= category.maxPoints * 0.4 ? "warning" : "destructive"}
-                        className="px-2 py-1"
-                      >
-                        {category.points}/{category.maxPoints}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <ul className="list-disc pl-5 text-sm">
-                        {category.details.map((detail, i) => (
-                          <li key={i}>{detail}</li>
-                        ))}
-                      </ul>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                <TableRow className="bg-muted">
-                  <TableCell className="font-bold">Total Score</TableCell>
-                  <TableCell className="text-center font-bold">{totalScore}/100</TableCell>
-                  <TableCell></TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          </div>
-          
-          {/* Game objectives section */}
-          <div>
-            <h3 className="text-xl font-semibold mb-4">Objectives Achieved</h3>
-            <div className="space-y-3">
-              {objectives.map((objective, index) => (
-                <div key={index} className="flex items-center justify-between bg-muted p-3 rounded-md">
-                  <div className="flex items-center gap-3">
-                    {objective.achieved ? (
-                      <CheckCircle className="text-green-500 h-5 w-5" />
-                    ) : (
-                      <XCircle className="text-red-500 h-5 w-5" />
-                    )}
-                    <span className={objective.achieved ? "font-medium" : ""}>{objective.name}</span>
+          <Card className="w-full max-w-5xl">
+            <CardHeader>
+              <CardTitle className="text-2xl text-center">Policing Strategy Evaluation</CardTitle>
+              <CardDescription className="text-center mb-3">Analysis of your 10-round policing strategy</CardDescription>
+              
+              {/* Score overview with grade */}
+              <div className="flex flex-col items-center mt-3 space-y-1">
+                <div className="flex items-center gap-3">
+                  <div className={`
+                    w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold
+                    ${totalScore >= 70 ? "bg-green-100 text-green-800" : 
+                      totalScore >= 50 ? "bg-yellow-100 text-yellow-800" : 
+                      "bg-red-100 text-red-800"}
+                  `}>
+                    {scoreGrade.letter}
                   </div>
                   <div>
-                    <Badge variant={objective.achieved ? "success" : "destructive"}>
-                      {objective.value} (Target: {objective.target})
-                    </Badge>
+                    <h3 className="text-xl font-bold">{totalScore}/100 Points</h3>
+                    <p className="text-sm">{scoreGrade.label} Performance</p>
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <h3 className="text-xl font-semibold">Overall Metrics</h3>
-              <div className="space-y-3">
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <span>Average Community Trust:</span>
-                    <span className="font-medium">{avgTrust.toFixed(1)}%</span>
-                  </div>
-                  <div className="w-full bg-muted rounded-full h-2.5">
-                    <div className="bg-primary h-2.5 rounded-full" style={{ width: `${avgTrust}%` }}></div>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <span>Average Crime Rate:</span>
-                    <span className="font-medium">{avgCrime.toFixed(1)}%</span>
-                  </div>
-                  <div className="w-full bg-muted rounded-full h-2.5">
-                    <div className="bg-destructive h-2.5 rounded-full" style={{ width: `${avgCrime}%` }}></div>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <span>Average False Arrest Rate:</span>
-                    <span className="font-medium">{avgFalseArrest.toFixed(1)}%</span>
-                  </div>
-                  <div className="w-full bg-muted rounded-full h-2.5">
-                    <div className="bg-orange-500 h-2.5 rounded-full" style={{ width: `${avgFalseArrest * 2}%` }}></div>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <span>Racial Disparity Index:</span>
-                    <span className="font-medium">{(racialBias / 2).toFixed(1)}%</span>
-                  </div>
-                  <div className="w-full bg-muted rounded-full h-2.5">
-                    <div className="bg-orange-500 h-2.5 rounded-full" style={{ width: `${racialBias / 2}%` }}></div>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <span>Economic Disparity Index:</span>
-                    <span className="font-medium">{(incomeBias / 2).toFixed(1)}%</span>
-                  </div>
-                  <div className="w-full bg-muted rounded-full h-2.5">
-                    <div className="bg-yellow-500 h-2.5 rounded-full" style={{ width: `${incomeBias / 2}%` }}></div>
-                  </div>
-                </div>
+                <p className="text-center max-w-xl text-sm">{scoreGrade.description}</p>
               </div>
-            </div>
-
-            <div className="space-y-4">
-              <h3 className="text-xl font-semibold">Analysis</h3>
-              <div className="space-y-2">
-                {getFeedback().map((item, index) => (
-                  <p key={index} className="text-sm">
-                    • {item}
-                  </p>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-muted p-4 rounded-md mt-6">
-            <h3 className="text-lg font-semibold mb-2">Key Takeaways</h3>
-            <p>
-              This simulation highlights the complex balance between effective policing, resource allocation, and
-              community trust. In real-world scenarios, these dynamics are even more nuanced and influenced by
-              historical, social, and economic factors.
-            </p>
-            <p className="mt-2">
-              Effective policing requires thoughtful resource allocation, community engagement, and awareness of
-              potential biases in enforcement practices. Building trust while reducing crime often requires innovative
-              approaches that address root causes rather than symptoms.
-            </p>
-          </div>
-          
-          {/* Educational call-to-action */}
-          <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 p-4 rounded-md">
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="h-6 w-6 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+            </CardHeader>
+            
+            <CardContent className="space-y-5">
+              {/* Detailed score breakdown table */}
               <div>
-                <h3 className="font-semibold mb-1 text-blue-800 dark:text-blue-300">Learning Opportunity</h3>
-                <p className="text-sm text-blue-800 dark:text-blue-300">
-                  This simulation is designed to foster understanding of complex policing dynamics. 
-                  Consider how your decisions reinforced or disrupted systemic patterns, 
-                  and how different policing approaches impacted various communities differently.
+                <h3 className="text-lg font-semibold mb-3">Score Breakdown</h3>
+                <Table>
+                  <TableCaption className="text-xs">Detailed analysis of your policing strategy across key metrics</TableCaption>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-1/4 text-sm">Category</TableHead>
+                      <TableHead className="w-1/6 text-center text-sm">Score</TableHead>
+                      <TableHead className="text-sm">Analysis</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {Object.values(scoreBreakdown).map((category) => (
+                      <TableRow key={category.title}>
+                        <TableCell className="font-medium text-sm">
+                          <div>{category.title}</div>
+                          <div className="text-xs text-muted-foreground">{category.description}</div>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge 
+                            variant={category.points >= category.maxPoints * 0.7 ? "success" : 
+                                    category.points >= category.maxPoints * 0.4 ? "warning" : "destructive"}
+                            className="px-2 py-0.5 text-xs"
+                          >
+                            {category.points}/{category.maxPoints}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <ul className="list-disc pl-5 text-xs">
+                            {category.details.map((detail, i) => (
+                              <li key={i}>{detail}</li>
+                            ))}
+                          </ul>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    <TableRow className="bg-muted">
+                      <TableCell className="font-bold text-sm">Total Score</TableCell>
+                      <TableCell className="text-center font-bold text-sm">{totalScore}/100</TableCell>
+                      <TableCell></TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+              
+              {/* Game objectives section */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Objectives Achieved</h3>
+                <div className="space-y-2">
+                  {objectives.map((objective, index) => (
+                    <div key={index} className="flex items-center justify-between bg-muted p-2 rounded-md">
+                      <div className="flex items-center gap-2">
+                        {objective.achieved ? (
+                          <CheckCircle className="text-green-500 h-4 w-4" />
+                        ) : (
+                          <XCircle className="text-red-500 h-4 w-4" />
+                        )}
+                        <span className={`${objective.achieved ? "font-medium" : ""} text-sm`}>{objective.name}</span>
+                      </div>
+                      <div>
+                        <Badge variant={objective.achieved ? "success" : "destructive"} className="text-xs">
+                          {objective.value} (Target: {objective.target})
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+    
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold">Overall Metrics</h3>
+                  <div className="space-y-2">
+                    <div>
+                      <div className="flex justify-between mb-1">
+                        <span className="text-sm">Average Community Trust:</span>
+                        <span className="font-medium text-sm">{avgTrust.toFixed(1)}%</span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-2">
+                        <div className="bg-primary h-2 rounded-full" style={{ width: `${avgTrust}%` }}></div>
+                      </div>
+                    </div>
+    
+                    <div>
+                      <div className="flex justify-between mb-1">
+                        <span className="text-sm">Average Crime Rate:</span>
+                        <span className="font-medium text-sm">{avgCrime.toFixed(1)}%</span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-2">
+                        <div className="bg-destructive h-2 rounded-full" style={{ width: `${avgCrime}%` }}></div>
+                      </div>
+                    </div>
+    
+                    <div>
+                      <div className="flex justify-between mb-1">
+                        <span className="text-sm">Average False Arrest Rate:</span>
+                        <span className="font-medium text-sm">{avgFalseArrest.toFixed(1)}%</span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-2">
+                        <div className="bg-orange-500 h-2 rounded-full" style={{ width: `${avgFalseArrest * 2}%` }}></div>
+                      </div>
+                    </div>
+    
+                    <div>
+                      <div className="flex justify-between mb-1">
+                        <span className="text-sm">Racial Disparity Index:</span>
+                        <span className="font-medium text-sm">{(racialBias / 2).toFixed(1)}%</span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-2">
+                        <div className="bg-orange-500 h-2 rounded-full" style={{ width: `${racialBias / 2}%` }}></div>
+                      </div>
+                    </div>
+    
+                    <div>
+                      <div className="flex justify-between mb-1">
+                        <span className="text-sm">Economic Disparity Index:</span>
+                        <span className="font-medium text-sm">{(incomeBias / 2).toFixed(1)}%</span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-2">
+                        <div className="bg-yellow-500 h-2 rounded-full" style={{ width: `${incomeBias / 2}%` }}></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+    
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold">Analysis</h3>
+                  <div className="space-y-1">
+                    {getFeedback().map((item, index) => (
+                      <p key={index} className="text-xs">
+                        • {item}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              </div>
+    
+              <div className="bg-muted p-3 rounded-md mt-4">
+                <h3 className="text-base font-semibold mb-2">Key Takeaways</h3>
+                <p className="text-xs">
+                  This simulation highlights the complex balance between effective policing, resource allocation, and
+                  community trust. In real-world scenarios, these dynamics are even more nuanced and influenced by
+                  historical, social, and economic factors.
+                </p>
+                <p className="mt-1 text-xs">
+                  Effective policing requires thoughtful resource allocation, community engagement, and awareness of
+                  potential biases in enforcement practices. Building trust while reducing crime often requires innovative
+                  approaches that address root causes rather than symptoms.
                 </p>
               </div>
-            </div>
-          </div>
-        </CardContent>
-        <CardFooter className="flex justify-center">
-          <Button size="lg" onClick={onReset}>
-            Restart Simulation
-          </Button>
-        </CardFooter>
-      </Card>
-    </div>
+              
+              {/* Educational call-to-action */}
+              <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 p-3 rounded-md">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h3 className="font-semibold mb-1 text-blue-800 dark:text-blue-300 text-sm">Learning Opportunity</h3>
+                    <p className="text-xs text-blue-800 dark:text-blue-300">
+                      This simulation is designed to foster understanding of complex policing dynamics. 
+                      Consider how your decisions reinforced or disrupted systemic patterns, 
+                      and how different policing approaches impacted various communities differently.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter className="flex justify-center">
+              <Button size="default" onClick={onReset}>
+                Restart Simulation
+              </Button>
+            </CardFooter>
+          </Card>
+        </div>
   )
 }
 

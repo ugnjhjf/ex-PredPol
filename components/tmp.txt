@@ -1,0 +1,73 @@
+
+                  {/* Add nested tabs for the round summary */}
+                  <Tabs defaultValue="districts" className="w-full">
+                    <TabsList className="grid w-full grid-cols-3">
+                      <TabsTrigger value="districts">District Metrics</TabsTrigger>
+                      <TabsTrigger value="budget">Budget</TabsTrigger>
+                      <TabsTrigger value="feedback">Feedback</TabsTrigger>
+                    </TabsList>
+                    
+ 
+                    {/* Feedback Tab - Reorganized into two columns */}
+                    <TabsContent value="feedback" className="pt-4">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-xl">Round Analysis</CardTitle>
+                          <CardDescription>Key insights and feedback from your decisions</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          {roundSummary.feedback ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {/* Column 1: Key Findings */}
+                              <div className="bg-muted/30 p-4 rounded-lg border">
+                                <h3 className="font-medium mb-3 text-lg">Key Findings</h3>
+                                <ul className="space-y-3">
+                                  {roundSummary.feedback.split('. ').filter(item => item.trim()).slice(0, Math.ceil(roundSummary.feedback.split('. ').length / 2)).map((point, index) => (
+                                    <li key={index} className="flex items-start gap-3">
+                                      <AlertCircle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                                      <span>{point.trim()}{!point.endsWith('.') ? '.' : ''}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                              
+                              {/* Column 2: Round Summary */}
+                              <div className="bg-muted/30 p-4 rounded-lg border">
+                                <h3 className="font-medium mb-3 text-lg">Round Summary</h3>
+                                <div className="space-y-2">
+                                  {roundSummary.feedback.split('. ').filter(item => item.trim()).slice(Math.ceil(roundSummary.feedback.split('. ').length / 2)).map((point, index) => (
+                                    <p key={index} className="flex items-start gap-2 text-sm">
+                                      <AlertCircle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                                      <span>{point.trim()}{!point.endsWith('.') ? '.' : ''}</span>
+                                    </p>
+                                  ))}
+                                  
+                                  {roundSummary.changes && roundSummary.changes.length > 0 && (
+                                    <div className="mt-4 pt-4 border-t">
+                                      <h4 className="font-medium mb-2">Policy Effects</h4>
+                                      {roundSummary.changes.map((change, index) => (
+                                        <p key={index} className="flex items-start gap-2 text-sm mb-2">
+                                          {change.includes("Crime rate -") || change.includes("Community trust +") || change.includes("False arrests -") ? (
+                                            <TrendingDown className="h-4 w-4 text-green-600 mt-0.5" />
+                                          ) : change.includes("Crime rate +") || change.includes("Community trust -") || change.includes("False arrests +") ? (
+                                            <TrendingUp className="h-4 w-4 text-red-600 mt-0.5" />
+                                          ) : (
+                                            <Minus className="h-4 w-4 text-amber-600 mt-0.5" />
+                                          )}
+                                          <span>{change}</span>
+                                        </p>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="text-center py-8 text-muted-foreground">
+                              No feedback available for this round.
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+                  </Tabs>
