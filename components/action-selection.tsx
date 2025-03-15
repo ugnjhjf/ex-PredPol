@@ -84,38 +84,63 @@ export default function ActionSelection({
   const actions = [
     {
       id: "cctv",
+      emoji: "📹",
       title: "Implement CCTV Surveillance",
       description: "Install cameras in public areas to monitor and deter crime.",
-      effects: "Reduces crime rate but may decrease community trust. Effects vary by district demographics.",
-      detailedEffects: "CCTV cameras have proven effective in deterring property crimes and helping solve cases. However, they're received differently in different communities. In affluent areas, they're often seen as security enhancements, while in lower-income minority neighborhoods, they can be perceived as intrusive surveillance, potentially reducing trust. The effectiveness increases with strategic placement around high-crime locations."
+      infoPoints: [
+        "Reduces crime through deterrence and detection",
+        "More effective in affluent areas, less trusted in marginalized communities",
+        "Can lower community trust, especially in minority neighborhoods",
+        "More effective with strategic placement in high-crime locations"
+      ]
     },
     {
       id: "app",
+      emoji: "📱",
       title: "Develop Anonymous Crime Reporting App",
       description: "Create a mobile app that allows citizens to report crimes anonymously.",
-      effects: "Generally increases community trust and reduces crime rate. More effective in high-crime areas.",
-      detailedEffects: "This app addresses the fear of retaliation that often prevents people from reporting crimes. It's particularly effective in neighborhoods with low trust in police, where traditional reporting is suppressed. The increase in valuable tips helps solve crimes and can significantly improve clearance rates. However, the app requires digital literacy and smartphone access, which may limit its effectiveness in some demographics."
+      infoPoints: [
+        "Addresses fear of retaliation when reporting crimes",
+        "Particularly effective in low-trust neighborhoods",
+        "Increases tips that help solve crimes",
+        "Requires digital literacy and smartphone access"
+      ]
     },
     {
       id: "education",
+      emoji: "🎓",
       title: "Public Education and Consultation",
       description: "Hold community meetings and educational programs about policing.",
-      effects: "Significantly improves trust, especially in low-trust districts. May help reduce crime in troubled areas.",
-      detailedEffects: "Community engagement through education builds relationships and understanding between police and residents. This strengthens social cohesion and creates networks of informal social control, which research shows can significantly reduce crime over time. In areas with historical police tensions, these programs help heal relationships, improving information sharing and cooperation. This is a long-term investment that yields compounding benefits."
+      infoPoints: [
+        "Builds relationships between police and community",
+        "Strengthens social cohesion and community-based support",
+        "Heals historical tensions with police",
+        "Long-term investment with compounding benefits"
+      ]
     },
     {
       id: "drone",
+      emoji: "🚁",
       title: "Drone Surveillance",
       description: "Deploy drones for aerial monitoring of high-crime areas.",
-      effects: "Reduces crime rate but can severely decrease trust in minority communities, potentially increasing false arrests.",
-      detailedEffects: "Drones cover more ground than traditional patrols and can respond quickly to incidents, reducing crime through deterrence and faster response times. However, they can increase false arrests due to limitations in visual identification from aerial footage, especially in dense areas or at night. In communities of color with histories of over-policing, drone surveillance often triggers concerns about privacy violations and racial profiling, significantly damaging trust."
+      infoPoints: [
+        "Covers more ground than traditional patrols",
+        "Enables faster response to incidents",
+        "Can increase false arrests due to visual identification limitations",
+        "Triggers privacy concerns in minority communities"
+      ]
     },
     {
       id: "facial",
+      emoji: "👤",
       title: "Facial Recognition Technology",
       description: "Deploy AI-powered facial recognition to identify suspects from surveillance footage.",
-      effects: "Reduces crime similarly across all districts, but has dramatically different effects on trust and false arrest rates based on district demographics.",
-      detailedEffects: "Current facial recognition algorithms have documented accuracy disparities across demographic groups, with higher error rates for women and people with darker skin tones. While the technology can help identify suspects quickly in all districts, its implementation in diverse neighborhoods leads to higher false arrest rates for minorities. These algorithmic biases compound existing societal inequities, severely damaging trust in affected communities while being perceived as more accurate in whiter, wealthier areas."
+      infoPoints: [
+        "Higher error rates for women and darker-skinned individuals",
+        "More acceptable in whiter, wealthier areas",
+        "Can significantly damage trust in diverse communities",
+        "Compounds existing inequities through algorithmic bias"
+      ]
     },
   ]
 
@@ -572,6 +597,7 @@ export default function ActionSelection({
                       />
                       <div className="grid gap-0.5">
                         <div className="flex items-center gap-1">
+                          <span className="mr-0.5 text-base">{action.emoji}</span>
                           <Label htmlFor={action.id} className={`font-medium text-xs ${(isImplemented || isFacialRecWithoutCCTV) ? "text-muted-foreground" : ""}`}>
                             {action.title}
                           </Label>
@@ -582,18 +608,26 @@ export default function ActionSelection({
                             <Badge variant="outline" className="text-[9px] px-1 py-0">Requires CCTV</Badge>
                           )}
                         </div>
-                        <p className="text-[10px] text-muted-foreground leading-tight">{action.description}</p>
-                        <div className="flex items-start gap-1">
-                          <p className="text-[10px] text-muted-foreground italic leading-tight">{action.effects}</p>
-                          <Popover>
+                        <p className="text-[10px] text-muted-foreground leading-tight">{action.description}
+                        <Popover>
                             <PopoverTrigger>
                               <InfoIcon className="h-3 w-3 text-muted-foreground cursor-pointer flex-shrink-0 mt-0.5" />
                             </PopoverTrigger>
-                            <PopoverContent className="w-80 p-3">
-                              <p className="text-xs">{action.detailedEffects}</p>
+                            <PopoverContent className="w-64 p-2">
+                              <p className="text-xs font-medium mb-1">Effects</p>
+                              <ul className="text-xs space-y-0.5">
+                                {action.infoPoints.map((point, index) => (
+                                  <li key={index} className="flex items-start">
+                                    <span className="text-xs mr-1">•</span>
+                                    <span>{point}</span>
+                                  </li>
+                                ))}
+                              </ul>
                             </PopoverContent>
                           </Popover>
-                        </div>
+
+                        </p>
+
                       </div>
                     </div>
                   );
