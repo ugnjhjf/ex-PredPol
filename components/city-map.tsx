@@ -238,4 +238,3 @@ export default function CityMap({ policeAllocation, handlePoliceAllocation, game
     </div>
   )
 }
-

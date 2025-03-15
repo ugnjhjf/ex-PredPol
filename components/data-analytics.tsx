@@ -1,5 +1,7 @@
 "use client"
 
+//import { PopulationPieChart } from "./charts/PopulationPieChart"
+import { MyPieChart,MyLineChart, SingleLineChart,MyStackedChart,IncomeExpensesChart} from "./charts/chart-components"
 import { useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -146,13 +148,37 @@ export function DataAnalytics({ gameLog, getDistrictName, currentRound }) {
     if (!gameLog || gameLog.length === 0) return [];
     
     return gameLog.map(entry => {
-      const racialBias = entry.metrics.arrestsByRace ? 
-        Math.abs(entry.metrics.arrestsByRace.black?.district3 - entry.metrics.arrestsByRace.white?.district1) +
-        Math.abs(entry.metrics.arrestsByRace.hispanic?.district3 - entry.metrics.arrestsByRace.white?.district1) : 0;
+      let racialBias = 0;
+      let economicBias = 0;
+      
+      // For the first round, use initial values from the game metrics
+      if (entry.round === 1) {
+        // Use absolute differences between districts as bias indicators
+        racialBias = Math.abs(65 - 5) + Math.abs(15 - 85); // Use district3 black vs district1 white
+        economicBias = Math.abs(75 - 5) + Math.abs(35 - 75); // Use district3/4 low income vs district1 high income
+      }
+      // For subsequent rounds, use the values from the current metrics
+      else if (entry.metrics) {
+        // Try to calculate racial bias
+        if (entry.metrics.arrestsByRace) {
+          racialBias = 
+            Math.abs(entry.metrics.arrestsByRace.black?.district3 - entry.metrics.arrestsByRace.white?.district1 || 60) +
+            Math.abs(entry.metrics.arrestsByRace.hispanic?.district3 - entry.metrics.arrestsByRace.white?.district1 || 10);
+        } else {
+          // Fallback if data is missing
+          racialBias = 70; // Default value based on initial conditions
+        }
         
-      const economicBias = entry.metrics.arrestsByIncome ? 
-        Math.abs(entry.metrics.arrestsByIncome.low?.district3 - entry.metrics.arrestsByIncome.high?.district1) +
-        Math.abs(entry.metrics.arrestsByIncome.low?.district4 - entry.metrics.arrestsByIncome.high?.district1) : 0;
+        // Try to calculate economic bias
+        if (entry.metrics.arrestsByIncome) {
+          economicBias = 
+            Math.abs(entry.metrics.arrestsByIncome.low?.district3 - entry.metrics.arrestsByIncome.high?.district1 || 70) +
+            Math.abs(entry.metrics.arrestsByIncome.low?.district4 - entry.metrics.arrestsByIncome.high?.district1 || 30);
+        } else {
+          // Fallback if data is missing
+          economicBias = 100; // Default value based on initial conditions
+        }
+      }
       
       return {
         round: entry.round,
@@ -287,26 +313,8 @@ export function DataAnalytics({ gameLog, getDistrictName, currentRound }) {
             >
               <ResponsiveContainer width="100%" height="100%">
                 {hasPopulationData ? (
-                  <PieChart>
-                    <Pie
-                      data={populationPieData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({name, percent}) => percent * 100 > 10 ? `${(percent * 100).toFixed(0)}%` : ''}
-                      outerRadius={70}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {populationPieData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={districtColors[entry.id]} />
-                      ))}
-                    </Pie>
-                    <Tooltip 
-                      formatter={(value) => new Intl.NumberFormat().format(value)} 
-                    />
-                    <Legend layout="vertical" align="right" verticalAlign="top" />
-                  </PieChart>
+                  <MyPieChart data={populationPieData} districtColors={districtColors} />
+                  
                 ) : (
                   <div className="flex items-center justify-center h-full">
                     <div className="text-center">
@@ -324,22 +332,7 @@ export function DataAnalytics({ gameLog, getDistrictName, currentRound }) {
             >
               <ResponsiveContainer width="100%" height="100%">
                 {hasPopulationData ? (
-                  <AreaChart data={totalPopulationTrend} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                    <XAxis dataKey="round" tick={{ fontSize: 10 }} />
-                    <YAxis 
-                      tickFormatter={(value) => new Intl.NumberFormat('en', { notation: 'compact' }).format(value)}
-                      tick={{ fontSize: 10 }}
-                    />
-                    <Tooltip formatter={(value) => new Intl.NumberFormat().format(value)} />
-                    <Area 
-                      type="monotone" 
-                      dataKey="totalPopulation" 
-                      stroke="#8884d8" 
-                      fill="#8884d8" 
-                      name="Total Population" 
-                    />
-                  </AreaChart>
+                  <SingleLineChart data={totalPopulationTrend} line_name="Total Population" />
                 ) : (
                   <div className="flex items-center justify-center h-full">
                     <div className="text-center">
@@ -357,48 +350,8 @@ export function DataAnalytics({ gameLog, getDistrictName, currentRound }) {
             >
               <ResponsiveContainer width="100%" height="100%">
                 {hasPopulationData ? (
-                  <LineChart data={populationData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                    <XAxis dataKey="round" tick={{ fontSize: 10 }} />
-                    <YAxis 
-                      tickFormatter={(value) => new Intl.NumberFormat('en', { notation: 'compact' }).format(value)}
-                      tick={{ fontSize: 10 }}
-                    />
-                    <Tooltip formatter={(value) => new Intl.NumberFormat().format(value)} />
-                    <Legend layout="horizontal" verticalAlign="top" align="right" height={20} />
-                    <Line 
-                      type="monotone" 
-                      dataKey="district1" 
-                      name={getDistrictName("district1")} 
-                      stroke={districtColors.district1} 
-                      strokeWidth={2} 
-                      dot={{ r: 2 }}
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="district2" 
-                      name={getDistrictName("district2")} 
-                      stroke={districtColors.district2} 
-                      strokeWidth={2}
-                      dot={{ r: 2 }}
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="district3" 
-                      name={getDistrictName("district3")} 
-                      stroke={districtColors.district3} 
-                      strokeWidth={2}
-                      dot={{ r: 2 }}
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="district4" 
-                      name={getDistrictName("district4")} 
-                      stroke={districtColors.district4} 
-                      strokeWidth={2}
-                      dot={{ r: 2 }}
-                    />
-                  </LineChart>
+                  <MyLineChart data={populationData} districtColors={districtColors} getDistrictName={getDistrictName} />
+
                 ) : (
                   <div className="flex items-center justify-center h-full">
                     <div className="text-center">
@@ -420,45 +373,8 @@ export function DataAnalytics({ gameLog, getDistrictName, currentRound }) {
               description="Crimes reported by district"
             >
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={crimeData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                  <XAxis dataKey="round" tick={{ fontSize: 10 }} />
-                  <YAxis tick={{ fontSize: 10 }} />
-                  <Tooltip />
-                  <Legend layout="horizontal" verticalAlign="top" align="right" height={20} />
-                  <Line 
-                    type="monotone" 
-                    dataKey="district1" 
-                    name={getDistrictName("district1")} 
-                    stroke={districtColors.district1} 
-                    strokeWidth={2}
-                    dot={{ r: 2 }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="district2" 
-                    name={getDistrictName("district2")} 
-                    stroke={districtColors.district2} 
-                    strokeWidth={2}
-                    dot={{ r: 2 }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="district3" 
-                    name={getDistrictName("district3")} 
-                    stroke={districtColors.district3} 
-                    strokeWidth={2}
-                    dot={{ r: 2 }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="district4" 
-                    name={getDistrictName("district4")} 
-                    stroke={districtColors.district4} 
-                    strokeWidth={2}
-                    dot={{ r: 2 }}
-                  />
-                </LineChart>
+                <MyLineChart data={crimeData} districtColors={districtColors} getDistrictName={getDistrictName} />
+
               </ResponsiveContainer>
             </ChartCard>
             
@@ -468,45 +384,7 @@ export function DataAnalytics({ gameLog, getDistrictName, currentRound }) {
               description="Arrests made by district"
             >
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={arrestsData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                  <XAxis dataKey="round" tick={{ fontSize: 10 }} />
-                  <YAxis tick={{ fontSize: 10 }} />
-                  <Tooltip />
-                  <Legend layout="horizontal" verticalAlign="top" align="right" height={20} />
-                  <Line 
-                    type="monotone" 
-                    dataKey="district1" 
-                    name={getDistrictName("district1")} 
-                    stroke={districtColors.district1} 
-                    strokeWidth={2}
-                    dot={{ r: 2 }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="district2" 
-                    name={getDistrictName("district2")} 
-                    stroke={districtColors.district2} 
-                    strokeWidth={2}
-                    dot={{ r: 2 }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="district3" 
-                    name={getDistrictName("district3")} 
-                    stroke={districtColors.district3} 
-                    strokeWidth={2}
-                    dot={{ r: 2 }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="district4" 
-                    name={getDistrictName("district4")} 
-                    stroke={districtColors.district4} 
-                    strokeWidth={2}
-                    dot={{ r: 2 }}
-                  />
-                </LineChart>
+                <MyLineChart data={arrestData} districtColors={districtColors} getDistrictName={getDistrictName} />
               </ResponsiveContainer>
             </ChartCard>
             
@@ -516,46 +394,7 @@ export function DataAnalytics({ gameLog, getDistrictName, currentRound }) {
               description="% arrests of innocent individuals"
             >
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={falseArrestData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                  <XAxis dataKey="round" tick={{ fontSize: 10 }} />
-                  <YAxis tick={{ fontSize: 10 }} />
-                  <Tooltip formatter={(value) => `${value}%`} />
-                  <Legend layout="horizontal" verticalAlign="top" align="right" height={20} />
-                  <ReferenceLine y={15} stroke="#ef4444" strokeDasharray="3 3" />
-                  <Line 
-                    type="monotone" 
-                    dataKey="district1" 
-                    name={getDistrictName("district1")} 
-                    stroke={districtColors.district1} 
-                    strokeWidth={2}
-                    dot={{ r: 2 }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="district2" 
-                    name={getDistrictName("district2")} 
-                    stroke={districtColors.district2} 
-                    strokeWidth={2}
-                    dot={{ r: 2 }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="district3" 
-                    name={getDistrictName("district3")} 
-                    stroke={districtColors.district3} 
-                    strokeWidth={2}
-                    dot={{ r: 2 }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="district4" 
-                    name={getDistrictName("district4")} 
-                    stroke={districtColors.district4} 
-                    strokeWidth={2}
-                    dot={{ r: 2 }}
-                  />
-                </LineChart>
+                <MyLineChart data={falseArrestData} districtColors={districtColors} getDistrictName={getDistrictName} />
               </ResponsiveContainer>
             </ChartCard>
           </div>
@@ -567,45 +406,7 @@ export function DataAnalytics({ gameLog, getDistrictName, currentRound }) {
               description="% crimes resulting in arrests"
             >
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={clearanceData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                  <XAxis dataKey="round" tick={{ fontSize: 10 }} />
-                  <YAxis tick={{ fontSize: 10 }} />
-                  <Tooltip formatter={(value) => `${value.toFixed(1)}%`} />
-                  <Legend layout="horizontal" verticalAlign="top" align="right" height={20} />
-                  <Line 
-                    type="monotone" 
-                    dataKey="district1" 
-                    name={getDistrictName("district1")} 
-                    stroke={districtColors.district1} 
-                    strokeWidth={2}
-                    dot={{ r: 2 }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="district2" 
-                    name={getDistrictName("district2")} 
-                    stroke={districtColors.district2} 
-                    strokeWidth={2}
-                    dot={{ r: 2 }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="district3" 
-                    name={getDistrictName("district3")} 
-                    stroke={districtColors.district3} 
-                    strokeWidth={2}
-                    dot={{ r: 2 }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="district4" 
-                    name={getDistrictName("district4")} 
-                    stroke={districtColors.district4} 
-                    strokeWidth={2}
-                    dot={{ r: 2 }}
-                  />
-                </LineChart>
+                <MyLineChart data={clearanceData} districtColors={districtColors} getDistrictName={getDistrictName} />
               </ResponsiveContainer>
             </ChartCard>
             
@@ -615,46 +416,7 @@ export function DataAnalytics({ gameLog, getDistrictName, currentRound }) {
               description="Trust in police by district"
             >
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={trustData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                  <XAxis dataKey="round" tick={{ fontSize: 10 }} />
-                  <YAxis domain={[0, 100]} tick={{ fontSize: 10 }} />
-                  <Tooltip formatter={(value) => `${value}%`} />
-                  <Legend layout="horizontal" verticalAlign="top" align="right" height={20} />
-                  <ReferenceLine y={55} stroke="#15803d" strokeDasharray="3 3" />
-                  <Line 
-                    type="monotone" 
-                    dataKey="district1" 
-                    name={getDistrictName("district1")} 
-                    stroke={districtColors.district1} 
-                    strokeWidth={2}
-                    dot={{ r: 2 }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="district2" 
-                    name={getDistrictName("district2")} 
-                    stroke={districtColors.district2} 
-                    strokeWidth={2}
-                    dot={{ r: 2 }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="district3" 
-                    name={getDistrictName("district3")} 
-                    stroke={districtColors.district3} 
-                    strokeWidth={2}
-                    dot={{ r: 2 }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="district4" 
-                    name={getDistrictName("district4")} 
-                    stroke={districtColors.district4} 
-                    strokeWidth={2}
-                    dot={{ r: 2 }}
-                  />
-                </LineChart>
+                <MyLineChart data={trustData} districtColors={districtColors} getDistrictName={getDistrictName} />
               </ResponsiveContainer>
             </ChartCard>
 
@@ -664,23 +426,26 @@ export function DataAnalytics({ gameLog, getDistrictName, currentRound }) {
               description="Combined crime statistics over time"
             >
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={crimeData.map(entry => ({
-                  round: entry.round,
-                  totalCrimes: entry.district1 + entry.district2 + entry.district3 + entry.district4
-                }))} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                  <XAxis dataKey="round" tick={{ fontSize: 10 }} />
-                  <YAxis tick={{ fontSize: 10 }} />
-                  <Tooltip formatter={(value) => [`${value} crimes`, "Total Crimes"]} />
-                  <Area 
-                    type="monotone" 
-                    dataKey="totalCrimes" 
-                    stroke="#ef4444" 
-                    fill="#fee2e2" 
-                    name="Total Crimes" 
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
+                  
+                  <LineChart data={crimeData.map(entry => ({
+                    round: entry.round,
+                    totalCrimes: entry.district1 + entry.district2 + entry.district3 + entry.district4
+                  }))} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                    <XAxis dataKey="round" tick={{ fontSize: 10 }} />
+                    <YAxis tick={{ fontSize: 10 }} />
+                    <Tooltip 
+                      formatter={(value) => [`${value} crimes`, "Total Crimes"]} 
+                      contentStyle={{ fontSize: '12px' }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="totalCrimes" 
+                      stroke="#ef4444" 
+                      name="Total Crimes" 
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
             </ChartCard>
           </div>
         </TabsContent>
@@ -694,17 +459,8 @@ export function DataAnalytics({ gameLog, getDistrictName, currentRound }) {
               description="Officers per district"
             >
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={policeAllocationData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                  <XAxis dataKey="round" tick={{ fontSize: 10 }} />
-                  <YAxis tick={{ fontSize: 10 }} />
-                  <Tooltip formatter={(value, name) => [`${value} officers`, name]} />
-                  <Legend layout="horizontal" verticalAlign="top" align="right" height={20} />
-                  <Bar dataKey={getDistrictName("district1")} stackId="a" fill={districtColors.district1} />
-                  <Bar dataKey={getDistrictName("district2")} stackId="a" fill={districtColors.district2} />
-                  <Bar dataKey={getDistrictName("district3")} stackId="a" fill={districtColors.district3} />
-                  <Bar dataKey={getDistrictName("district4")} stackId="a" fill={districtColors.district4} />
-                </BarChart>
+                <MyStackedChart data={policeAllocationData} districtColors={districtColors} getDistrictName={getDistrictName} />
+                
               </ResponsiveContainer>
             </ChartCard>
             
@@ -713,7 +469,9 @@ export function DataAnalytics({ gameLog, getDistrictName, currentRound }) {
               title="Available Budget" 
               description="Budget per round"
             >
+              
               <ResponsiveContainer width="100%" height="100%">
+                
                 <LineChart data={overBudgetData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
                   <XAxis dataKey="round" tick={{ fontSize: 10 }} />
@@ -737,17 +495,8 @@ export function DataAnalytics({ gameLog, getDistrictName, currentRound }) {
               title="Income vs. Expenses" 
               description="Budget flows per round"
             >
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={budgetData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                  <XAxis dataKey="round" tick={{ fontSize: 10 }} />
-                  <YAxis tick={{ fontSize: 10 }} />
-                  <Tooltip formatter={(value) => `$${value}`} />
-                  <Legend layout="horizontal" verticalAlign="top" align="right" height={20} />
-                  <Bar dataKey="income" name="Income" fill="#22c55e" />
-                  <Bar dataKey="expenses" name="Expenses" fill="#ef4444" />
-                </BarChart>
-              </ResponsiveContainer>
+              <IncomeExpensesChart data={budgetData} />
+              
             </ChartCard>
           </div>
         </TabsContent>
@@ -788,102 +537,7 @@ export function DataAnalytics({ gameLog, getDistrictName, currentRound }) {
               </ResponsiveContainer>
             </ChartCard>
             
-            {/* About Bias Indicators */}
-            <Card>
-              <CardHeader className="py-2 px-3">
-                <CardTitle className="text-sm">About Bias Indicators</CardTitle>
-                <CardDescription className="text-xs">Understanding the metrics</CardDescription>
-              </CardHeader>
-              <CardContent className="p-3 text-xs space-y-2">
-                <div>
-                  <h4 className="font-medium">Racial Bias Index</h4>
-                  <p>Measures disparity in arrest patterns across racial groups. Lower values indicate more equitable policing.</p>
-                </div>
-                <div>
-                  <h4 className="font-medium">Economic Bias Index</h4>
-                  <p>Measures disparity in arrest patterns across income groups. Lower values indicate more equitable policing.</p>
-                </div>
-                <div>
-                  <h4 className="font-medium">Target Threshold: 30%</h4>
-                  <p>Values above this line indicate significant systemic bias in policing outcomes.</p>
-                </div>
-              </CardContent>
-            </Card>
             
-            {/* District Disparity Analysis */}
-            <ChartCard 
-              title="District Disparity Analysis" 
-              description="Gap between highest & lowest districts"
-            >
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={gameLog.map(entry => {
-                  // Calculate gaps for each round
-                  const trustValues = [
-                    entry.metrics.communityTrust.district1, 
-                    entry.metrics.communityTrust.district2,
-                    entry.metrics.communityTrust.district3, 
-                    entry.metrics.communityTrust.district4
-                  ];
-                  
-                  const crimeValues = [
-                    entry.metrics.crimesReported.district1, 
-                    entry.metrics.crimesReported.district2,
-                    entry.metrics.crimesReported.district3, 
-                    entry.metrics.crimesReported.district4
-                  ];
-                  
-                  const falseArrestValues = [
-                    entry.metrics.falseArrestRate.district1, 
-                    entry.metrics.falseArrestRate.district2,
-                    entry.metrics.falseArrestRate.district3, 
-                    entry.metrics.falseArrestRate.district4
-                  ];
-                  
-                  // Calculate max differences
-                  const trustGap = Math.max(...trustValues) - Math.min(...trustValues);
-                  const crimeGap = Math.max(...crimeValues) - Math.min(...crimeValues);
-                  const falseArrestGap = Math.max(...falseArrestValues) - Math.min(...falseArrestValues);
-                  
-                  return {
-                    round: entry.round,
-                    trustGap,
-                    crimeGap: crimeGap / 5, // Normalized to percentage
-                    falseArrestGap
-                  };
-                })} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                  <XAxis dataKey="round" tick={{ fontSize: 10 }} />
-                  <YAxis domain={[0, 'auto']} tick={{ fontSize: 10 }} />
-                  <Tooltip />
-                  <Legend layout="horizontal" verticalAlign="top" align="right" height={20} />
-                  <ReferenceLine y={25} stroke="#ef4444" strokeDasharray="3 3" />
-                  <Line 
-                    type="monotone" 
-                    dataKey="trustGap" 
-                    name="Trust Gap" 
-                    stroke="#3b82f6" 
-                    strokeWidth={2}
-                    dot={{ r: 2 }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="crimeGap" 
-                    name="Crime Gap (%)" 
-                    stroke="#f59e0b" 
-                    strokeWidth={2}
-                    dot={{ r: 2 }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="falseArrestGap" 
-                    name="False Arrest Gap" 
-                    stroke="#10b981" 
-                    strokeWidth={2}
-                    dot={{ r: 2 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </ChartCard>
           </div>
         </TabsContent>
       </Tabs>

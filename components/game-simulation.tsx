@@ -613,7 +613,9 @@ export default function GameSimulation() {
         communityTrust: {...newMetrics.communityTrust},
         crimesReported: {...newMetrics.crimesReported},
         falseArrestRate: {...newMetrics.falseArrestRate},
-        arrests: {...newMetrics.arrests}
+        arrests: {...newMetrics.arrests},
+        arrestsByRace: {...newMetrics.arrestsByRace}, // Add this
+        arrestsByIncome: {...newMetrics.arrestsByIncome} // Add this
       },
       metricChanges: { // Add metric changes to the log
         communityTrust: {
