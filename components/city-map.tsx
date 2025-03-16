@@ -86,62 +86,49 @@ export default function CityMap({ policeAllocation, handlePoliceAllocation, game
                 </CardTitle>
                 <div className="flex items-center gap-1.5 flex-wrap justify-end">
                   {/* Trust metric */}
-                  <div className="flex items-center">
-                    <Badge 
-                      variant="outline" 
-                      className={`px-1.5 py-0.5 text-xs ${getTrustColor(gameMetrics.communityTrust[district])}`}
-                    >
-                      Trust: {gameMetrics.communityTrust[district]}%
-                    </Badge>
-                    <Popover>
-                      <PopoverTrigger>
-                        <InfoIcon className="h-3.5 w-3.5 ml-0.5 text-muted-foreground cursor-pointer" />
-                      </PopoverTrigger>
-                      <PopoverContent className="w-64 p-2">
-                        <p className="text-xs">
-                          Community trust in police. Higher trust leads to better cooperation and crime reporting.
-                        </p>
-                      </PopoverContent>
-                    </Popover>
-                  </div>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Badge 
+                        variant="outline" 
+                        className={`px-1.5 py-0.5 text-xs ${getTrustColor(gameMetrics.communityTrust[district])} cursor-help`}
+                      >
+                        Trust: {gameMetrics.communityTrust[district]}%
+                      </Badge>
+                    </PopoverTrigger>
+                    <PopoverContent side="top" className="w-64 p-2 text-xs">
+                      <p>How much citizens trust law enforcement. Higher trust leads to better crime reporting and community cooperation.</p>
+                    </PopoverContent>
+                  </Popover>
                   
                   {/* Crime metric */}
-                  <div className="flex items-center">
-                    <Badge 
-                      variant="outline" 
-                      className={`px-1.5 py-0.5 text-xs ${getCrimeColor(gameMetrics.crimesReported[district])}`}
-                    >
-                      Crimes: {gameMetrics.crimesReported[district]}
-                    </Badge>
-                    <Popover>
-                      <PopoverTrigger>
-                        <InfoIcon className="h-3.5 w-3.5 ml-0.5 text-muted-foreground cursor-pointer" />
-                      </PopoverTrigger>
-                      <PopoverContent className="w-64 p-2">
-                        <p className="text-xs">Number of crimes reported in the district. Lower values indicate safer neighborhoods.</p>
-                      </PopoverContent>
-                    </Popover>
-                  </div>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Badge 
+                        variant="outline" 
+                        className={`px-1.5 py-0.5 text-xs ${getCrimeColor(gameMetrics.crimesReported[district])} cursor-help`}
+                      >
+                        Crimes: {gameMetrics.crimesReported[district]}
+                      </Badge>
+                    </PopoverTrigger>
+                    <PopoverContent side="top" className="w-64 p-2 text-xs">
+                      <p>Number of crimes reported in the district. Lower values indicate safer neighborhoods.</p>
+                    </PopoverContent>
+                  </Popover>
                   
                   {/* False Arrests metric */}
-                  <div className="flex items-center">
-                    <Badge 
-                      variant="outline" 
-                      className={`px-1.5 py-0.5 text-xs ${getFalseArrestColor(gameMetrics.falseArrestRate[district])}`}
-                    >
-                      False Arrests: {gameMetrics.falseArrestRate[district]}%
-                    </Badge>
-                    <Popover>
-                      <PopoverTrigger>
-                        <InfoIcon className="h-3.5 w-3.5 ml-0.5 text-muted-foreground cursor-pointer" />
-                      </PopoverTrigger>
-                      <PopoverContent className="w-64 p-2">
-                        <p className="text-xs">
-                          Percentage of arrests that involve innocent individuals. Lower values indicate more accurate policing.
-                        </p>
-                      </PopoverContent>
-                    </Popover>
-                  </div>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Badge 
+                        variant="outline" 
+                        className={`px-1.5 py-0.5 text-xs ${getFalseArrestColor(gameMetrics.falseArrestRate[district])} cursor-help`}
+                      >
+                        False Arrests: {gameMetrics.falseArrestRate[district]}%
+                      </Badge>
+                    </PopoverTrigger>
+                    <PopoverContent side="top" className="w-64 p-2 text-xs">
+                      <p>Percentage of arrests that involve innocent individuals. Lower values indicate more accurate policing.</p>
+                    </PopoverContent>
+                  </Popover>
                 </div>
               </div>
               <CardDescription className="text-xs font-medium">

@@ -367,6 +367,49 @@ export function DataAnalytics({ gameLog, getDistrictName, currentRound }) {
         {/* Crime Statistics Tab */}
         <TabsContent value="crime" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* First row - 3 columns */}
+            {/* Crimes vs. Arrests chart */}
+            <ChartCard 
+              title="Crimes vs. Arrests" 
+              description="Comparing total crimes reported with suspects arrested citywide"
+            >
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData.map(entry => ({
+                  round: entry.round,
+                  "Crimes Reported": 
+                    entry.crimeData.district1 + 
+                    entry.crimeData.district2 + 
+                    entry.crimeData.district3 + 
+                    entry.crimeData.district4,
+                  "Suspects Arrested":
+                    (entry.arrestData.district1 || 0) + 
+                    (entry.arrestData.district2 || 0) + 
+                    (entry.arrestData.district3 || 0) + 
+                    (entry.arrestData.district4 || 0)
+                }))} margin={{ top: 10, right: 30, left: 10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                  <XAxis dataKey="round" tick={{ fontSize: 10 }} />
+                  <YAxis tick={{ fontSize: 10 }} />
+                  <Tooltip contentStyle={{ fontSize: '12px' }} />
+                  <Legend verticalAlign="top" height={36} />
+                  <Line 
+                    type="monotone" 
+                    dataKey="Crimes Reported" 
+                    stroke="#ef4444" 
+                    strokeWidth={2}
+                    activeDot={{ r: 5 }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="Suspects Arrested" 
+                    stroke="#3b82f6" 
+                    strokeWidth={2}
+                    activeDot={{ r: 5 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartCard>
+            
             {/* Crimes Reported */}
             <ChartCard 
               title="Crime Reports" 
@@ -374,7 +417,6 @@ export function DataAnalytics({ gameLog, getDistrictName, currentRound }) {
             >
               <ResponsiveContainer width="100%" height="100%">
                 <MyLineChart data={crimeData} districtColors={districtColors} getDistrictName={getDistrictName} />
-
               </ResponsiveContainer>
             </ChartCard>
             
@@ -387,7 +429,10 @@ export function DataAnalytics({ gameLog, getDistrictName, currentRound }) {
                 <MyLineChart data={arrestData} districtColors={districtColors} getDistrictName={getDistrictName} />
               </ResponsiveContainer>
             </ChartCard>
-            
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Second row - 3 columns */}
             {/* False Arrest Rate */}
             <ChartCard 
               title="False Arrest Rates" 
@@ -397,9 +442,7 @@ export function DataAnalytics({ gameLog, getDistrictName, currentRound }) {
                 <MyLineChart data={falseArrestData} districtColors={districtColors} getDistrictName={getDistrictName} />
               </ResponsiveContainer>
             </ChartCard>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            
             {/* Clearance Rate */}
             <ChartCard 
               title="Clearance Rates" 
@@ -410,7 +453,7 @@ export function DataAnalytics({ gameLog, getDistrictName, currentRound }) {
               </ResponsiveContainer>
             </ChartCard>
             
-            {/* Community Trust - Fixed to single column */}
+            {/* Community Trust */}
             <ChartCard 
               title="Community Trust" 
               description="Trust in police by district"
@@ -418,34 +461,6 @@ export function DataAnalytics({ gameLog, getDistrictName, currentRound }) {
               <ResponsiveContainer width="100%" height="100%">
                 <MyLineChart data={trustData} districtColors={districtColors} getDistrictName={getDistrictName} />
               </ResponsiveContainer>
-            </ChartCard>
-
-            {/* Add a total crime trend chart */}
-            <ChartCard 
-              title="Total Crime Trend" 
-              description="Combined crime statistics over time"
-            >
-              <ResponsiveContainer width="100%" height="100%">
-                  
-                  <LineChart data={crimeData.map(entry => ({
-                    round: entry.round,
-                    totalCrimes: entry.district1 + entry.district2 + entry.district3 + entry.district4
-                  }))} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                    <XAxis dataKey="round" tick={{ fontSize: 10 }} />
-                    <YAxis tick={{ fontSize: 10 }} />
-                    <Tooltip 
-                      formatter={(value) => [`${value} crimes`, "Total Crimes"]} 
-                      contentStyle={{ fontSize: '12px' }}
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="totalCrimes" 
-                      stroke="#ef4444" 
-                      name="Total Crimes" 
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
             </ChartCard>
           </div>
         </TabsContent>

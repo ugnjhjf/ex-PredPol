@@ -367,64 +367,49 @@ export default function ActionSelection({
                       {/* Metrics badges */}
                       <div className="flex items-center gap-1.5 flex-wrap justify-end">
                         {/* Trust metric */}
-                        <div className="flex items-center">
-                          <Badge 
-                            variant="outline" 
-                            className={`px-1.5 py-0.5 text-xs ${getTrustColor(gameMetrics.communityTrust[district])}`}
-                          >
-                            Trust: {gameMetrics.communityTrust[district]}%
-                          </Badge>
-                          <Popover>
-                            <PopoverTrigger>
-                              <InfoIcon className="h-3.5 w-3.5 ml-0.5 text-muted-foreground cursor-pointer" />
-                            </PopoverTrigger>
-                            <PopoverContent className="w-64 p-2">
-                              <p className="text-xs">
-                                How much the community trusts the police. Higher trust leads to better cooperation.
-                              </p>
-                            </PopoverContent>
-                          </Popover>
-                        </div>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Badge 
+                              variant="outline" 
+                              className={`px-1.5 py-0.5 text-xs ${getTrustColor(gameMetrics.communityTrust[district])} cursor-help`}
+                            >
+                              Trust: {gameMetrics.communityTrust[district]}%
+                            </Badge>
+                          </PopoverTrigger>
+                          <PopoverContent side="top" className="w-64 p-2 text-xs">
+                            <p>How much citizens trust law enforcement. Higher trust leads to better crime reporting and community cooperation.</p>
+                          </PopoverContent>
+                        </Popover>
                         
                         {/* Crime metric */}
-                        <div className="flex items-center">
-                          <Badge 
-                            variant="outline" 
-                            className={`px-1.5 py-0.5 text-xs ${getCrimeColor(gameMetrics.crimesReported[district])}`}
-                          >
-                            Crimes: {gameMetrics.crimesReported[district]}
-                          </Badge>
-                          <Popover>
-                            <PopoverTrigger>
-                              <InfoIcon className="h-3.5 w-3.5 ml-0.5 text-muted-foreground cursor-pointer" />
-                            </PopoverTrigger>
-                            <PopoverContent className="w-64 p-2">
-                              <p className="text-xs">
-                                Number of crimes reported in the district. Lower is better.
-                              </p>
-                            </PopoverContent>
-                          </Popover>
-                        </div>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Badge 
+                              variant="outline" 
+                              className={`px-1.5 py-0.5 text-xs ${getCrimeColor(gameMetrics.crimesReported[district])} cursor-help`}
+                            >
+                              Crimes: {gameMetrics.crimesReported[district]}
+                            </Badge>
+                          </PopoverTrigger>
+                          <PopoverContent side="top" className="w-64 p-2 text-xs">
+                            <p>Number of crimes reported in the district. Lower values indicate safer neighborhoods.</p>
+                          </PopoverContent>
+                        </Popover>
                         
                         {/* False Arrests metric */}
-                        <div className="flex items-center">
-                          <Badge 
-                            variant="outline" 
-                            className={`px-1.5 py-0.5 text-xs ${getFalseArrestColor(gameMetrics.falseArrestRate[district])}`}
-                          >
-                            F.A.: {gameMetrics.falseArrestRate[district]}%
-                          </Badge>
-                          <Popover>
-                            <PopoverTrigger>
-                              <InfoIcon className="h-3.5 w-3.5 ml-0.5 text-muted-foreground cursor-pointer" />
-                            </PopoverTrigger>
-                            <PopoverContent className="w-64 p-2">
-                              <p className="text-xs">
-                                False Arrest Rate - percentage of arrests involving innocent individuals.
-                              </p>
-                            </PopoverContent>
-                          </Popover>
-                        </div>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Badge 
+                              variant="outline" 
+                              className={`px-1.5 py-0.5 text-xs ${getFalseArrestColor(gameMetrics.falseArrestRate[district])} cursor-help`}
+                            >
+                              F.A.: {gameMetrics.falseArrestRate[district]}%
+                            </Badge>
+                          </PopoverTrigger>
+                          <PopoverContent side="top" className="w-64 p-2 text-xs">
+                            <p>Percentage of arrests that involve innocent individuals. Lower values indicate more accurate policing.</p>
+                          </PopoverContent>
+                        </Popover>
                       </div>
                     </div>
                     <CardDescription className="text-xs font-medium">
@@ -512,11 +497,13 @@ export default function ActionSelection({
                         <div className="flex items-center">
                           <h4 className="text-xs font-medium mb-1">Common Crimes:</h4>
                           <Popover>
-                            <PopoverTrigger>
-                              <InfoIcon className="h-3 w-3 ml-1 text-muted-foreground cursor-pointer" />
+                            <PopoverTrigger asChild>
+                              <Button variant="ghost" className="h-4 w-4 p-0 ml-1 text-muted-foreground cursor-help">
+                                <HelpCircleIcon className="h-3 w-3" />
+                              </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-80 p-2">
-                              <p className="text-xs">Most frequent types of crime in this district.</p>
+                            <PopoverContent className="w-80 p-2 text-xs">
+                              <p>Most frequent types of crime in this district.</p>
                             </PopoverContent>
                           </Popover>
                         </div>

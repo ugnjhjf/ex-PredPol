@@ -75,9 +75,6 @@ const DistrictMetric = ({
   };
 
 export function RoundSummary({ currentRound, gameMetrics, policeAllocation, roundSummary, getDistrictName, gameLog }) {
-  // Extract special events if they exist
-  const specialEvents = roundSummary.specialEvents || [];
-  
   // Style constants to match action screen
   const districtEmojis = {
     district1: "🏙️",
@@ -113,19 +110,6 @@ export function RoundSummary({ currentRound, gameMetrics, policeAllocation, roun
 
   return (
     <div className="p-3 space-y-4 h-full overflow-auto">
-      {/* Show special events as alerts at the top */}
-      {specialEvents && specialEvents.length > 0 && (
-        <div className="space-y-2 mb-4">
-          {specialEvents.map((event, idx) => (
-            <Alert key={idx} variant={event.type === "positive" ? "default" : "destructive"}>
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle className="text-xs font-semibold">{event.title}</AlertTitle>
-              <AlertDescription className="text-xs">{event.message}</AlertDescription>
-            </Alert>
-          ))}
-        </div>
-      )}
-      
       {/* Round title - make consistent with menu item font size */}
       <div>
         <h2 className="text-base font-bold">Round {currentRound} Summary</h2>

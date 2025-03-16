@@ -1,10 +1,10 @@
 "use client"
+
 import { RoundSummary } from "@/components/round-summary"
-import { useState, useEffect } from "react" // Add useEffect
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useState, useEffect } from "react" 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { InfoIcon, TrendingUp, TrendingDown, Minus, AlertCircle, ChevronDown, ChevronRight, AlertTriangle, RefreshCcw, Clock, SendHorizonal, CircleDollarSign } from "lucide-react"
+import { InfoIcon, RefreshCcw, Clock, SendHorizonal, CircleDollarSign, Bell } from "lucide-react"
 import {
   AlertDialog,
   AlertDialogContent,
@@ -21,28 +21,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { 
+  Popover, 
+  PopoverContent, 
+  PopoverTrigger 
+} from "@/components/ui/popover"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import CityMap from "./city-map"
 import ActionSelection from "./action-selection"
 import OverallMetrics from "./overall-metrics"
 import GameLog from "./game-log"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Separator } from "@/components/ui/separator" // Import Separator component
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import { ScrollArea } from "@/components/ui/scroll-area" // Add this import
-import { Progress } from "@/components/ui/progress" // Also add Progress for budget visualization
-import PerformanceCharts from "./performance-charts" // Add this import
 import GameOverview from "./game-overview"
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible"
 import { DataAnalytics } from "@/components/data-analytics"
 
 // Add district styling variables
@@ -82,8 +71,8 @@ export default function GameBoard({
   getDistrictName,
   gameLog,
   implementedActions,
-  onRestart, // Add this prop
-  isFirstPlay, // Add this prop
+  onRestart, 
+  isFirstPlay,
 }) {
   // Show the summary tab as the default tab when a new round starts
   const [activeTab, setActiveTab] = useState(showRoundSummary || (currentRound === 1 && isFirstPlay) ? "summary" : "map")
@@ -91,12 +80,55 @@ export default function GameBoard({
   const [isRoundResultsOpen, setIsRoundResultsOpen] = useState(false)
   const [showRestartConfirmDialog, setShowRestartConfirmDialog] = useState(false);
 
+  // Modify state for event notifications to better track unread events
+  const [events, setEvents] = useState([])
+  const [unreadEvents, setUnreadEvents] = useState(0)
+  const [eventsOpened, setEventsOpened] = useState(false)
+
   // Use this effect to switch to summary tab when new round starts
   useEffect(() => {
     if (showRoundSummary) {
       setActiveTab("summary")
     }
   }, [showRoundSummary, currentRound]) // Add currentRound as a dependency
+
+  // Extract events from roundSummary and gameLog
+  useEffect(() => {
+    // When a new round starts, collect special events only from the current round summary
+    if (roundSummary && roundSummary.specialEvents && roundSummary.specialEvents.length > 0) {
+      // Limit to at most 3 events per round
+      const limitedEvents = roundSummary.specialEvents.slice(0, 3).map(event => ({
+        ...event,
+        round: currentRound,
+        timestamp: new Date().toISOString(),
+        read: false
+      }))
+      
+      // Add to the overall events list
+      setEvents(prevEvents => [...limitedEvents, ...prevEvents])
+      
+      // Update unread count based on new events only
+      setUnreadEvents(prev => prev + limitedEvents.length)
+    }
+  }, [roundSummary, currentRound])
+
+  // Reset events when game is restarted
+  useEffect(() => {
+    if (currentRound === 1 && isFirstPlay) {
+      setEvents([])
+      setUnreadEvents(0)
+      setEventsOpened(false)
+    }
+  }, [currentRound, isFirstPlay])
+
+  // Handle marking events as read
+  const handleOpenEvents = () => {
+    setEventsOpened(true)
+    setUnreadEvents(0)
+    setEvents(prevEvents => 
+      prevEvents.map(event => ({ ...event, read: true }))
+    )
+  }
 
   const handlePoliceAllocation = (district, shift, value) => {
     const newValue = Number.parseInt(value)
@@ -162,10 +194,68 @@ export default function GameBoard({
         
         {/* Move buttons to the right */}
         <div className="flex items-center gap-4">
+          {/* Add event notification icon with improved badge logic */}
+          <Popover onOpenChange={(open) => {
+            if (open) handleOpenEvents();
+          }}>
+            <PopoverTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="relative mt-1" // Added top margin
+              >
+                <Bell className="h-5 w-5" />
+                {unreadEvents > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {unreadEvents}
+                  </span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent side="bottom" align="end" className="w-80 p-0">
+              <div className="flex justify-between items-center p-3 border-b">
+                <h3 className="font-medium">Events & Alerts</h3>
+                <Button variant="ghost" size="sm" onClick={() => {
+                  setEvents([])
+                  setUnreadEvents(0)
+                }}>
+                  Clear All
+                </Button>
+              </div>
+              
+              <ScrollArea className="h-[300px]">
+                {events.length === 0 ? (
+                  <div className="p-4 text-center text-muted-foreground">
+                    No events to display
+                  </div>
+                ) : (
+                  <div className="divide-y">
+                    {events.map((event, index) => (
+                      <div 
+                        key={index} 
+                        className={`p-3 ${event.type === 'destructive' || event.type === 'negative' ? 'bg-red-50 dark:bg-red-950' : 
+                                         event.type === 'positive' ? 'bg-green-50 dark:bg-green-950' : 
+                                         'bg-blue-50 dark:bg-blue-950'}`}
+                      >
+                        <div className="flex justify-between">
+                          <h4 className="font-medium text-sm">{event.title}</h4>
+                          <Badge variant="outline" className="text-[10px]">Round {event.round}</Badge>
+                        </div>
+                        <p className="text-xs mt-1">{event.message}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </ScrollArea>
+            </PopoverContent>
+          </Popover>
+
           {/* Updated display for police allocation */}
           <Badge variant="outline" className="text-lg px-3 py-1">
             Allocated Police: {totalAllocatedOfficers}/20 👮
           </Badge>
+          
+          {/* Help button */}
           <Dialog open={showHelpDialog} onOpenChange={setShowHelpDialog}>
             <DialogTrigger asChild>
               <Button variant="outline" size="icon">
@@ -236,13 +326,15 @@ export default function GameBoard({
               </div>
             </DialogContent>
           </Dialog>
+          
           {/* Add restart button */}
           <Button variant="outline" onClick={handleRestartClick} className="flex items-center gap-1.5">
             <RefreshCcw className="h-4 w-4" />
             Restart
           </Button>
-          {/* Fixed End Round button - Remove the disabled attribute entirely */}
-          <Button onClick={handleNextRound} className="flex items-center gap-1.5">
+          
+          {/* End Round button with a sharper color */}
+          <Button onClick={handleNextRound} className="flex items-center gap-1.5" variant="default">
             <SendHorizonal className="h-4 w-4" />
             End Round
           </Button>
@@ -253,43 +345,43 @@ export default function GameBoard({
 
       {/* Replace Tabs with Sidebar + Content layout */}
       <div className="flex flex-1 mt-2 gap-4 overflow-hidden"> {/* Reduced mt-4 to mt-2 to save space */}
-        {/* Left Sidebar Menu */}
+        {/* Left Sidebar Menu with updated selection styling and sharper colors */}
         <div className="w-48 bg-muted/30 rounded-md border p-2 flex flex-col gap-1"> {/* Reduce width from 56 to 48 */}
           <Button 
-            variant={activeTab === "summary" ? "default" : "ghost"} 
-            className="justify-start"
+            variant={activeTab === "summary" ? "secondary" : "ghost"} 
+            className={`justify-start ${activeTab === "summary" ? "bg-blue-100 text-blue-800 hover:bg-blue-200 dark:bg-blue-800 dark:text-blue-100 dark:hover:bg-blue-700" : ""}`}
             onClick={() => setActiveTab("summary")}
           >
             <span className="mr-2">{currentRound === 1 && isFirstPlay ? "📋" : "📊"}</span>
             {currentRound === 1 && isFirstPlay ? "Game Overview" : "Round Summary"}
           </Button>
           <Button 
-            variant={activeTab === "map" ? "default" : "ghost"} 
-            className="justify-start"
+            variant={activeTab === "map" ? "secondary" : "ghost"} 
+            className={`justify-start ${activeTab === "map" ? "bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-800 dark:text-green-100 dark:hover:bg-green-700" : ""}`}
             onClick={() => setActiveTab("map")}
           >
             <span className="mr-2">🗺️</span>
             Districts
           </Button>
           <Button 
-            variant={activeTab === "actions" ? "default" : "ghost"} 
-            className="justify-start"
+            variant={activeTab === "actions" ? "secondary" : "ghost"} 
+            className={`justify-start ${activeTab === "actions" ? "bg-amber-100 text-amber-800 hover:bg-amber-200 dark:bg-amber-800 dark:text-amber-100 dark:hover:bg-amber-700" : ""}`}
             onClick={() => setActiveTab("actions")}
           >
             <span className="mr-2">⚙️</span>
             Actions
           </Button>
           <Button 
-            variant={activeTab === "performance" ? "default" : "ghost"} 
-            className="justify-start"
+            variant={activeTab === "performance" ? "secondary" : "ghost"} 
+            className={`justify-start ${activeTab === "performance" ? "bg-purple-100 text-purple-800 hover:bg-purple-200 dark:bg-purple-800 dark:text-purple-100 dark:hover:bg-purple-700" : ""}`}
             onClick={() => setActiveTab("performance")}
           >
             <span className="mr-2">📈</span>
             Data Analytics
           </Button>
           <Button 
-            variant={activeTab === "log" ? "default" : "ghost"} 
-            className="justify-start"
+            variant={activeTab === "log" ? "secondary" : "ghost"} 
+            className={`justify-start ${activeTab === "log" ? "bg-rose-100 text-rose-800 hover:bg-rose-200 dark:bg-rose-800 dark:text-rose-100 dark:hover:bg-rose-700" : ""}`}
             onClick={() => setActiveTab("log")}
           >
             <span className="mr-2">📜</span>
@@ -364,7 +456,7 @@ export default function GameBoard({
         </div>
       </div>
       
-      {/* Add restart confirmation dialog */}
+      {/* Restart confirmation dialog */}
       <AlertDialog open={showRestartConfirmDialog} onOpenChange={setShowRestartConfirmDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>

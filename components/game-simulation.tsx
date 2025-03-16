@@ -630,14 +630,14 @@ export default function GameSimulation() {
     const specialEvents = checkForSpecialEvents(newMetrics, policeAllocation, metricChanges);
     
     if (specialEvents.length > 0) {
-      // Store the special events to display in the round summary
-      setCurrentSpecialEvents(specialEvents);
+      // Limit to at most 3 events per round
+      const limitedEvents = specialEvents.slice(0, 3);
       
-      // Add the events to the changes list
-      changes.push(...specialEvents.map(event => event.message));
+      // Store the special events to display in notifications but NOT in round summary
+      setCurrentSpecialEvents(limitedEvents);
       
       // Apply the effects of the events
-      specialEvents.forEach(event => {
+      limitedEvents.forEach(event => {
         // Apply budget effects
         if (event.budgetEffect) {
           newMetrics.budget += event.budgetEffect;
@@ -679,7 +679,7 @@ export default function GameSimulation() {
         }
         
         // Add this event to triggered events history
-        setTriggeredEvents(prev => [...prev, { ...event, round: currentRound }]);
+        setTriggeredEvents(prev => [...prev, ...limitedEvents.map(event => ({ ...event, round: currentRound }))]);
       });
     } else {
       // Clear any previous special events
@@ -784,7 +784,7 @@ export default function GameSimulation() {
         expenses: expenses,
         details: budgetChanges
       },
-      specialEvents: specialEvents // Make sure special events are passed to the round summary
+      specialEvents: specialEvents.slice(0, 3) // Make sure special events are passed to the round summary
     })
 
     // Add to game log
@@ -836,7 +836,7 @@ export default function GameSimulation() {
       population: {
         ...newMetrics.population
       },
-      specialEvents: specialEvents.map(event => ({
+      specialEvents: specialEvents.slice(0, 3).map(event => ({
         title: event.title,
         message: event.message,
         type: event.type
@@ -1009,6 +1009,8 @@ export default function GameSimulation() {
     setShowRoundSummary(true)
     setIsFirstPlay(true) // Reset to first play state
     setGameLog([])
+    setCurrentSpecialEvents([]) // Reset special events
+    setTriggeredEvents([]) // Reset triggered events
     setPoliceAllocation({
       district1: { day: 1, night: 1 },
       district2: { day: 1, night: 1 },
