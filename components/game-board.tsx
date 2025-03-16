@@ -4,7 +4,7 @@ import { useState, useEffect } from "react" // Add useEffect
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { InfoIcon, TrendingUp, TrendingDown, Minus, AlertCircle, ChevronDown, ChevronRight } from "lucide-react"
+import { InfoIcon, TrendingUp, TrendingDown, Minus, AlertCircle, ChevronDown, ChevronRight, AlertTriangle } from "lucide-react"
 import {
   AlertDialog,
   AlertDialogContent,
@@ -144,7 +144,7 @@ export default function GameBoard({
   }
 
   return (
-    <div className="h-[90vh] flex flex-col">
+    <div className="h-screen w-full flex flex-col overflow-hidden pb-4"> {/* Change from h-[90vh] to h-screen and add w-full */}
       <div className="flex justify-between items-center mb-4">
         {/* Move Round badge to the left */}
         <div className="flex items-center gap-4">
@@ -248,9 +248,9 @@ export default function GameBoard({
       <OverallMetrics gameMetrics={gameMetrics} currentRound={currentRound} />
 
       {/* Replace Tabs with Sidebar + Content layout */}
-      <div className="flex flex-1 mt-4 gap-4 overflow-hidden">
+      <div className="flex flex-1 mt-2 gap-4 overflow-hidden"> {/* Reduced mt-4 to mt-2 to save space */}
         {/* Left Sidebar Menu */}
-        <div className="w-56 bg-muted/30 rounded-md border p-2 flex flex-col gap-1">
+        <div className="w-48 bg-muted/30 rounded-md border p-2 flex flex-col gap-1"> {/* Reduce width from 56 to 48 */}
           <Button 
             variant={activeTab === "summary" ? "default" : "ghost"} 
             className="justify-start"

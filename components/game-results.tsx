@@ -14,7 +14,7 @@ import {
   TableRow 
 } from "@/components/ui/table"
 
-export default function GameResults({ metrics, onReset }) {
+export default function GameResults({ metrics, onReset, gameLog }) {
   // Calculate overall scores
   const avgTrust =
     (metrics.communityTrust.district1 +
@@ -306,14 +306,71 @@ export default function GameResults({ metrics, onReset }) {
   scoreBreakdown.policeAccuracy.points = accuracyPoints;
   
   // Calculate total score from components
+  // Remove this block since it's duplicating variables
+  // const totalScore = 
+  //   scoreBreakdown.crimeReduction.points + 
+  //   scoreBreakdown.communityTrust.points + 
+  //   scoreBreakdown.equitablePolicing.points + 
+  //   scoreBreakdown.policeAccuracy.points;
+
+  // Add trust threshold checks for each district
+  const districtTrustCheck = {
+    district1: metrics.communityTrust.district1 >= 50, // Downtown needs moderate trust
+    district2: metrics.communityTrust.district2 >= 40, // Westside needs some trust
+    district3: metrics.communityTrust.district3 >= 30, // South Side needs at least minimal trust
+    district4: metrics.communityTrust.district4 >= 40, // Eastside needs some trust
+  };
+  
+  const allDistrictsPassTrustThreshold = 
+    districtTrustCheck.district1 && 
+    districtTrustCheck.district2 && 
+    districtTrustCheck.district3 && 
+    districtTrustCheck.district4;
+    
+  // Add trust requirement to final score calculation
+  const minimumDistrictTrustPoints = allDistrictsPassTrustThreshold ? 0 : -15;
+  scoreBreakdown.communityTrust.points = Math.max(0, 
+    scoreBreakdown.communityTrust.points + minimumDistrictTrustPoints);
+  
+  if (!allDistrictsPassTrustThreshold) {
+    scoreBreakdown.communityTrust.details.push(
+      "Failed to maintain minimum trust thresholds across all districts (-15)"
+    );
+  }
+  
+  // Update totalScore calculation to include trust penalties
   const totalScore = 
     scoreBreakdown.crimeReduction.points + 
     scoreBreakdown.communityTrust.points + 
     scoreBreakdown.equitablePolicing.points + 
     scoreBreakdown.policeAccuracy.points;
   
-  // Performance grade based on score
+  // Replace the existing getGrade function with this enhanced one
   const getGrade = (score) => {
+    // First check minimum district trust requirement
+    if (!allDistrictsPassTrustThreshold) {
+      if (score >= 70) return { letter: "C+", label: "Limited Success", 
+        description: "Your approach failed to maintain minimum trust levels in all districts, limiting your effectiveness." };
+      else if (score >= 50) return { letter: "C-", label: "Compromised Outcomes", 
+        description: "Without minimum trust in all districts, your results were substantially compromised." };
+      else return { letter: "D", label: "Poor", 
+        description: "Your approach failed to build minimum trust in all districts, resulting in ineffective policing." };
+    }
+    
+    // Then check average trust threshold
+    if (avgTrust < 40) {
+      // Cap grade at C if trust is too low, regardless of score
+      if (score >= 60) return { letter: "C", label: "Average", description: "Your approach failed to build adequate community trust, limiting overall effectiveness." };
+      else if (score >= 50) return { letter: "C-", label: "Below Average", description: "Your approach failed to build adequate community trust, limiting overall effectiveness." };
+      else return { letter: "D", label: "Poor", description: "Your approach failed to build adequate community trust, resulting in ineffective policing." };
+    }
+    
+    // Add bonus for very high trust
+    if (avgTrust >= 65) {
+      score += 5; // Bonus points for high average trust
+    }
+    
+    // Normal grade calculation if trust thresholds are met
     if (score >= 90) return { letter: "A", label: "Exceptional", description: "Your balanced approach to policing achieved remarkable results across all metrics." };
     if (score >= 80) return { letter: "B+", label: "Excellent", description: "Your strategy produced very good results with only minor shortcomings." };
     if (score >= 70) return { letter: "B", label: "Very Good", description: "Your approach was effective in most areas with some room for improvement." };
@@ -392,8 +449,114 @@ export default function GameResults({ metrics, onReset }) {
     return feedback
   }
 
+  // Add district trust thresholds visualization to results
+  const renderDistrictTrustThresholds = () => {
+    const thresholds = [
+      {district: "district1", name: "Downtown", threshold: 50, actual: metrics.communityTrust.district1},
+      {district: "district2", name: "Westside", threshold: 40, actual: metrics.communityTrust.district2},
+      {district: "district3", name: "South Side", threshold: 30, actual: metrics.communityTrust.district3},
+      {district: "district4", name: "Eastside", threshold: 40, actual: metrics.communityTrust.district4}
+    ];
+    
+    return (
+      <div className="mb-4">
+        <h3 className="text-sm font-semibold mb-2">District Trust Thresholds</h3>
+        <div className="grid grid-cols-4 gap-2">
+          {thresholds.map(item => (
+            <div key={item.district} className="space-y-1">
+              <div className="flex justify-between text-xs">
+                <span>{item.name}</span>
+                <span className={item.actual >= item.threshold ? "text-green-500" : "text-red-500"}>
+                  {item.actual}% / {item.threshold}%
+                </span>
+              </div>
+              <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                <div 
+                  className={`h-full ${item.actual >= item.threshold ? "bg-green-500" : "bg-red-500"}`} 
+                  style={{ width: `${(item.actual / 100) * 100}%` }}
+                ></div>
+                <div 
+                  className="h-full border-r-2 border-black relative -top-1.5" 
+                  style={{ width: `${(item.threshold / 100) * 100}%`, borderColor: 'rgba(0,0,0,0.5)' }}
+                ></div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="text-xs mt-1 text-muted-foreground">
+          {allDistrictsPassTrustThreshold 
+            ? "✓ All districts met minimum trust thresholds"  
+            : "✗ Failed to meet minimum trust thresholds in some districts, limiting overall grade"}
+        </div>
+      </div>
+    );
+  };
+
+  // Add function to get triggered events
+  const getTriggeredEvents = () => {
+    if (!gameLog || !gameLog.length) return [];
+    
+    return gameLog.flatMap(entry => 
+      entry.specialEvents ? entry.specialEvents : []
+    );
+  };
+  
+  // Calculate total allocated police by district
+  const getDistrictPoliceAllocation = (district) => {
+    if (!gameLog || gameLog.length === 0) return { day: 0, night: 0 };
+    
+    // Get the last round's police allocation
+    const lastRound = gameLog[gameLog.length - 1];
+    return lastRound.policeAllocation[district] || { day: 0, night: 0 };
+  };
+  
+  // Calculate if police allocation was appropriate
+  const getPoliceAllocationAssessment = () => {
+    const district1Allocation = getDistrictPoliceAllocation('district1');
+    const district3Allocation = getDistrictPoliceAllocation('district3');
+    
+    const district1Balanced = Math.abs(district1Allocation.day - district1Allocation.night) <= 1;
+    const district3Enough = district3Allocation.night >= 4 && district3Allocation.day >= 2;
+    
+    let score = 0;
+    const details = [];
+    
+    // Downtown needs balanced allocation
+    if (district1Balanced) {
+      score += 5;
+      details.push("Downtown had a well-balanced police allocation (+5)");
+    } else {
+      details.push("Downtown lacked proper day/night balance (0)");
+    }
+    
+    // South Side needs proper night emphasis
+    if (district3Enough) {
+      score += 8;
+      details.push("South Side had appropriate night shift priority (+8)");
+    } else if (district3Allocation.night >= 3) {
+      score += 3;
+      details.push("South Side had partial night shift coverage (+3)");
+    } else {
+      details.push("South Side lacked adequate night shift coverage (0)");
+    }
+    
+    return { score, details };
+  };
+  
+  // Update score calculation to include police allocation appropriateness
+  const policeAllocationAssessment = getPoliceAllocationAssessment();
+  
+  // Add police allocation score to equitable policing score (if not already added)
+  if (policeAllocationAssessment.score > 0) {
+    // Only add these points if they weren't already added earlier in the code
+    if (!scoreBreakdown.equitablePolicing.details.some(detail => detail.includes("police allocation"))) {
+      scoreBreakdown.equitablePolicing.points += policeAllocationAssessment.score;
+      scoreBreakdown.equitablePolicing.details.push(...policeAllocationAssessment.details);
+    }
+  }
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-[90vh] p-4">
+    <div className="flex flex-col items-center justify-center min-h-screen w-full p-4">
           <Card className="w-full max-w-5xl">
             <CardHeader>
               <CardTitle className="text-2xl text-center">Policing Strategy Evaluation</CardTitle>
@@ -420,6 +583,9 @@ export default function GameResults({ metrics, onReset }) {
             </CardHeader>
             
             <CardContent className="space-y-5">
+              {/* Add district trust thresholds visualization */}
+              {renderDistrictTrustThresholds()}
+              
               {/* Detailed score breakdown table */}
               <div>
                 <h3 className="text-lg font-semibold mb-3">Score Breakdown</h3>
@@ -548,12 +714,15 @@ export default function GameResults({ metrics, onReset }) {
     
                 <div className="space-y-3">
                   <h3 className="text-lg font-semibold">Analysis</h3>
-                  <div className="space-y-1">
-                    {getFeedback().map((item, index) => (
-                      <p key={index} className="text-xs">
-                        • {item}
-                      </p>
-                    ))}
+                  <div className="space-y-2 bg-muted p-3 rounded-md">
+                    <ul className="space-y-2">
+                      {getFeedback().map((item, index) => (
+                        <li key={index} className="flex items-start gap-2 text-sm">
+                          <span className="text-primary flex-shrink-0 mt-1">•</span>
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 </div>
               </div>
@@ -582,6 +751,21 @@ export default function GameResults({ metrics, onReset }) {
                       This simulation is designed to foster understanding of complex policing dynamics. 
                       Consider how your decisions reinforced or disrupted systemic patterns, 
                       and how different policing approaches impacted various communities differently.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Police Allocation Analysis */}
+              <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 p-3 rounded-md">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h3 className="font-semibold mb-1 text-blue-800 dark:text-blue-300 text-sm">Police Allocation Analysis</h3>
+                    <p className="text-xs text-blue-800 dark:text-blue-300">
+                      Proper day/night shift allocation by district is crucial. {policeAllocationAssessment.score > 8 
+                        ? "You effectively prioritized night shifts in high-crime areas while maintaining appropriate day coverage."
+                        : "You could have improved by allocating more officers to night shifts in South Side while maintaining balanced coverage in Downtown."}
                     </p>
                   </div>
                 </div>

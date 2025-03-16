@@ -1,331 +1,334 @@
+"use client"
+
+import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
+import { Progress } from "@/components/ui/progress"
+import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
-import { InfoIcon, TrendingUp, TrendingDown } from "lucide-react"
+import { 
+  TrendingUp, 
+  TrendingDown, 
+  Heart, 
+  ShieldAlert, 
+  Users, 
+  Building2, 
+  Shield, 
+  AlertTriangle, 
+  DollarSign 
+} from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { useEffect, useState } from "react"
 
 export default function OverallMetrics({ gameMetrics, currentRound }) {
   // Keep track of previous metrics for comparison
   const [previousMetrics, setPreviousMetrics] = useState(null)
   
-  // Update previous metrics whenever game metrics change and after round 1
+  // Update previous metrics when current metrics change
   useEffect(() => {
     if (currentRound > 1) {
-      // Store current metrics before they update
-      return () => {
-        setPreviousMetrics({ ...gameMetrics })
-      }
+      setPreviousMetrics(prev => prev || { ...gameMetrics })
     }
-  }, [gameMetrics, currentRound])
+  }, [currentRound])
 
-  // Calculate overall metrics
-  const avgTrust =
+  // Calculate city-wide averages
+  const avgTrust = 
     (gameMetrics.communityTrust.district1 +
-      gameMetrics.communityTrust.district2 +
-      gameMetrics.communityTrust.district3 +
-      gameMetrics.communityTrust.district4) /
-    4
-
-  const totalCrimes = 
-    gameMetrics.crimesReported.district1 +
-    gameMetrics.crimesReported.district2 +
-    gameMetrics.crimesReported.district3 +
-    gameMetrics.crimesReported.district4
-
-  // Calculate total arrests (add this calculation)
-  const totalArrests = 
-    gameMetrics.arrests.district1 +
-    gameMetrics.arrests.district2 +
-    gameMetrics.arrests.district3 +
-    gameMetrics.arrests.district4
-
-  // Calculate average crime rate based on crimes reported
-  // We can use a calculated value that normalizes crime numbers to a percentage
-  const avgCrime =
+     gameMetrics.communityTrust.district2 +
+     gameMetrics.communityTrust.district3 +
+     gameMetrics.communityTrust.district4) / 4
+  
+  const avgCrime = 
     (Math.min(100, gameMetrics.crimesReported.district1 / 5) +
-      Math.min(100, gameMetrics.crimesReported.district2 / 5) +
-      Math.min(100, gameMetrics.crimesReported.district3 / 5) +
-      Math.min(100, gameMetrics.crimesReported.district4 / 5)) /
-    4
-
-  const avgFalseArrest =
+     Math.min(100, gameMetrics.crimesReported.district2 / 5) +
+     Math.min(100, gameMetrics.crimesReported.district3 / 5) +
+     Math.min(100, gameMetrics.crimesReported.district4 / 5)) / 4
+  
+  const avgFalseArrest = 
     (gameMetrics.falseArrestRate.district1 +
-      gameMetrics.falseArrestRate.district2 +
-      gameMetrics.falseArrestRate.district3 +
-      gameMetrics.falseArrestRate.district4) /
-    4
-
-  // Calculate bias scores
-  const racialBias =
-    Math.abs(gameMetrics.arrestsByRace.black.district3 - gameMetrics.arrestsByRace.white.district1) +
-    Math.abs(gameMetrics.arrestsByRace.hispanic.district3 - gameMetrics.arrestsByRace.white.district1)
-
-  const incomeBias =
-    Math.abs(gameMetrics.arrestsByIncome.low.district3 - gameMetrics.arrestsByIncome.high.district1) +
-    Math.abs(gameMetrics.arrestsByIncome.low.district4 - gameMetrics.arrestsByIncome.high.district1)
-
-  // Calculate trend direction for metrics when previous data exists
-  const getTrend = (current, metricName) => {
-    if (!previousMetrics || currentRound <= 1) return null;
-    
-    // Define previous values based on metric type
-    let prev;
-    switch(metricName) {
-      case 'avgTrust':
-        prev = (previousMetrics.communityTrust.district1 +
-                previousMetrics.communityTrust.district2 + 
-                previousMetrics.communityTrust.district3 + 
-                previousMetrics.communityTrust.district4) / 4;
-        break;
-      case 'avgCrime':
-        prev = (previousMetrics.crimeRate.district1 +
-                previousMetrics.crimeRate.district2 + 
-                previousMetrics.crimeRate.district3 + 
-                previousMetrics.crimeRate.district4) / 4;
-        break;
-      case 'avgFalseArrest':
-        prev = (previousMetrics.falseArrestRate.district1 +
-                previousMetrics.falseArrestRate.district2 + 
-                previousMetrics.falseArrestRate.district3 + 
-                previousMetrics.falseArrestRate.district4) / 4;
-        break;
-      // Add logic for bias metrics if needed
-      // ...
-    }
-    
-    // Return trend based on comparison with threshold for minimal changes
-    if (Math.abs(current - prev) < 0.5) return 'neutral';
-    return current > prev ? 'up' : 'down';
+     gameMetrics.falseArrestRate.district2 +
+     gameMetrics.falseArrestRate.district3 +
+     gameMetrics.falseArrestRate.district4) / 4
+  
+  // Calculate total population
+  const totalPopulation = 
+    gameMetrics.population.district1 +
+    gameMetrics.population.district2 +
+    gameMetrics.population.district3 +
+    gameMetrics.population.district4
+  
+  // Calculate metric changes compared to previous state
+  const getTrustChange = () => {
+    if (!previousMetrics) return 0
+    const prevAvg = 
+      (previousMetrics.communityTrust.district1 +
+       previousMetrics.communityTrust.district2 +
+       previousMetrics.communityTrust.district3 +
+       previousMetrics.communityTrust.district4) / 4
+    return avgTrust - prevAvg
   }
-
-  // Determine if a trend is positive or negative based on the metric
-  const isTrendPositive = (trend, metricName) => {
-    if (trend === 'neutral') return null;
-    
-    switch(metricName) {
-      case 'avgTrust':
-        return trend === 'up';
-      case 'avgCrime':
-        return trend === 'down';
-      case 'avgFalseArrest':
-        return trend === 'down';
-      case 'racialBias':
-      case 'incomeBias':
-        return trend === 'down';
-      default:
-        return null;
-    }
+  
+  const getCrimeChange = () => {
+    if (!previousMetrics) return 0
+    const prevAvg = 
+      (Math.min(100, previousMetrics.crimesReported.district1 / 5) +
+       Math.min(100, previousMetrics.crimesReported.district2 / 5) +
+       Math.min(100, previousMetrics.crimesReported.district3 / 5) +
+       Math.min(100, previousMetrics.crimesReported.district4 / 5)) / 4
+    return avgCrime - prevAvg
   }
-
+  
+  const getFalseArrestChange = () => {
+    if (!previousMetrics) return 0
+    const prevAvg = 
+      (previousMetrics.falseArrestRate.district1 +
+       previousMetrics.falseArrestRate.district2 +
+       previousMetrics.falseArrestRate.district3 +
+       previousMetrics.falseArrestRate.district4) / 4
+    return avgFalseArrest - prevAvg
+  }
+  
+  const getPopulationChange = () => {
+    if (!previousMetrics) return 0
+    const prevTotal = 
+      previousMetrics.population.district1 +
+      previousMetrics.population.district2 +
+      previousMetrics.population.district3 +
+      previousMetrics.population.district4
+    return totalPopulation - prevTotal
+  }
+  
+  // Changes
+  const trustChange = getTrustChange()
+  const crimeChange = getCrimeChange()
+  const falseArrestChange = getFalseArrestChange()
+  const populationChange = getPopulationChange()
+  
+  // Get color classes based on value (good/bad)
   const getTrustColor = (trust) => {
-    if (trust >= 70) return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
-    if (trust >= 40) return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100"
-    return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100"
+    if (trust >= 70) return "text-green-600 dark:text-green-400"
+    if (trust >= 40) return "text-yellow-600 dark:text-yellow-400"
+    return "text-red-600 dark:text-red-400"
   }
-
+  
   const getCrimeColor = (crime) => {
-    if (crime <= 30) return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
-    if (crime <= 60) return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100"
-    return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100"
+    if (crime <= 30) return "text-green-600 dark:text-green-400"
+    if (crime <= 60) return "text-yellow-600 dark:text-yellow-400"
+    return "text-red-600 dark:text-red-400"
   }
-
+  
   const getFalseArrestColor = (rate) => {
-    if (rate <= 10) return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
-    if (rate <= 20) return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100"
-    return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100"
+    if (rate <= 10) return "text-green-600 dark:text-green-400"
+    if (rate <= 20) return "text-yellow-600 dark:text-yellow-400"
+    return "text-red-600 dark:text-red-400"
   }
-
-  const getBiasColor = (bias) => {
-    const normalizedBias = bias / 2 // Normalize to 0-100 scale
-    if (normalizedBias <= 30) return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
-    if (normalizedBias <= 60) return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100"
-    return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100"
+  
+  // Get badge for metric change indicators
+  const getChangeIndicator = (change, isInverted = false) => {
+    if (change === 0) return null
+    
+    const isPositive = isInverted ? change < 0 : change > 0
+    const Icon = isPositive ? TrendingUp : TrendingDown
+    const color = isPositive ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
+    
+    return (
+      <div className={`flex items-center gap-0.5 ${color} text-xs ml-1`}>
+        <Icon className="h-3 w-3" />
+        <span>{Math.abs(change).toFixed(1)}{isInverted ? "" : "%"}</span>
+      </div>
+    )
   }
 
   return (
-    <Card className="w-full">
+    <Card className="overflow-hidden">
       <CardContent className="p-4">
-        <div className="grid grid-cols-5 gap-4">
-          {/* 1. Crimes Reported */}
-          <Card className="overflow-hidden">
-            <CardContent className="p-3">
-              <div className="flex flex-col items-center">
-                <div className="flex items-center gap-1 mb-1">
-                  <span className="text-xs font-medium">Crimes Reported</span>
-                  <Popover>
-                    <PopoverTrigger>
-                      <InfoIcon className="h-3 w-3 text-muted-foreground cursor-pointer" />
-                    </PopoverTrigger>
-                    <PopoverContent className="w-80">
-                      <p className="text-sm">
-                        Total crimes reported across all districts. Lower is better.
-                      </p>
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Badge variant="outline" className={`px-2 py-1 text-lg ${getCrimeColor(totalCrimes)}`}>
-                    {totalCrimes}
-                  </Badge>
-                  
-                  {/* Show trend indicator if after round 1 */}
-                  {currentRound > 1 && getTrend(totalCrimes, 'totalCrimes') !== 'neutral' && (
-                    <span className={`ml-1 ${isTrendPositive(getTrend(totalCrimes, 'totalCrimes'), 'totalCrimes') ? 'text-green-600' : 'text-red-600'}`}>
-                      {getTrend(totalCrimes, 'totalCrimes') === 'up' ? (
-                        <TrendingUp className="h-5 w-5" />
-                      ) : (
-                        <TrendingDown className="h-5 w-5" />
-                      )}
-                    </span>
-                  )}
-                </div>
+        <div className="grid grid-cols-5 gap-6">
+          {/* Community Trust Metric */}
+          <div className="flex items-center gap-3">
+            <div className="bg-blue-100 dark:bg-blue-900 rounded-full p-2">
+              <Heart className="h-6 w-6 text-blue-600 dark:text-blue-300" />
+            </div>
+            <div>
+              <div className="flex items-center gap-1">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <h3 className="text-sm font-medium flex items-center gap-1 cursor-help">
+                      Community Trust
+                    </h3>
+                  </PopoverTrigger>
+                  <PopoverContent side="top" className="text-sm w-80">
+                    <p>How much citizens trust law enforcement. Higher trust leads to better crime reporting and community cooperation.</p>
+                  </PopoverContent>
+                </Popover>
               </div>
-            </CardContent>
-          </Card>
+              <div className="flex items-center">
+                <span className={`text-base font-bold ${getTrustColor(avgTrust)}`}>
+                  {avgTrust.toFixed(1)}%
+                </span>
+                {getChangeIndicator(trustChange)}
+              </div>
+            </div>
+          </div>
 
-          {/* 2. Number of Arrests */}
-          <Card className="overflow-hidden">
-            <CardContent className="p-3">
-              <div className="flex flex-col items-center">
-                <div className="flex items-center gap-1 mb-1">
-                  <span className="text-xs font-medium">No. of Arrests</span>
-                  <Popover>
-                    <PopoverTrigger>
-                      <InfoIcon className="h-3 w-3 text-muted-foreground cursor-pointer" />
-                    </PopoverTrigger>
-                    <PopoverContent className="w-80">
-                      <p className="text-sm">
-                        Total number of arrests made across all districts.
-                      </p>
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Badge variant="outline" className="px-2 py-1 text-lg">
-                    {gameMetrics.arrests.district1 + 
-                    gameMetrics.arrests.district2 + 
-                    gameMetrics.arrests.district3 + 
-                    gameMetrics.arrests.district4}
-                  </Badge>
-                  
-                  {/* Add trend indicator for arrests */}
-                  {currentRound > 1 && getTrend(totalArrests, 'totalArrests') !== 'neutral' && (
-                    <span className={`ml-1 ${isTrendPositive(getTrend(totalArrests, 'totalArrests'), 'totalArrests') ? 'text-green-600' : 'text-red-600'}`}>
-                      {getTrend(totalArrests, 'totalArrests') === 'up' ? (
-                        <TrendingUp className="h-5 w-5" />
-                      ) : (
-                        <TrendingDown className="h-5 w-5" />
-                      )}
-                    </span>
-                  )}
-                </div>
+          {/* Crime Rate Metric */}
+          <div className="flex items-center gap-3">
+            <div className="bg-red-100 dark:bg-red-900 rounded-full p-2">
+              <ShieldAlert className="h-6 w-6 text-red-600 dark:text-red-300" />
+            </div>
+            <div>
+              <div className="flex items-center gap-1">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <h3 className="text-sm font-medium flex items-center gap-1 cursor-help">
+                      Crime Rate
+                    </h3>
+                  </PopoverTrigger>
+                  <PopoverContent side="top" className="text-sm w-80">
+                    <p>Average crime rate across all districts. Lower values indicate safer neighborhoods.</p>
+                  </PopoverContent>
+                </Popover>
               </div>
-            </CardContent>
-          </Card>
+              <div className="flex items-center">
+                <span className={`text-base font-bold ${getCrimeColor(avgCrime)}`}>
+                  {avgCrime.toFixed(1)}%
+                </span>
+                {getChangeIndicator(crimeChange, true)}
+              </div>
+            </div>
+          </div>
 
-          {/* 3. False Arrest Rate */}
-          <Card className="overflow-hidden">
-            <CardContent className="p-3">
-              <div className="flex flex-col items-center">
-                <div className="flex items-center gap-1 mb-1">
-                  <span className="text-xs font-medium">False Arrest Rate</span>
-                  <Popover>
-                    <PopoverTrigger>
-                      <InfoIcon className="h-3 w-3 text-muted-foreground cursor-pointer" />
-                    </PopoverTrigger>
-                    <PopoverContent className="w-80">
-                      <p className="text-sm">
-                        Percentage of arrests that involve innocent individuals. Lower values indicate more accurate and
-                        fair policing.
-                      </p>
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Badge variant="outline" className={`px-2 py-1 text-lg ${getFalseArrestColor(avgFalseArrest)}`}>
-                    {avgFalseArrest.toFixed(1)}%
-                  </Badge>
-                  
-                  {/* Show trend indicator if after round 1 */}
-                  {currentRound > 1 && getTrend(avgFalseArrest, 'avgFalseArrest') !== 'neutral' && (
-                    <span className={`ml-1 ${isTrendPositive(getTrend(avgFalseArrest, 'avgFalseArrest'), 'avgFalseArrest') ? 'text-green-600' : 'text-red-600'}`}>
-                      {getTrend(avgFalseArrest, 'avgFalseArrest') === 'up' ? (
-                        <TrendingUp className="h-5 w-5" />
-                      ) : (
-                        <TrendingDown className="h-5 w-5" />
-                      )}
-                    </span>
-                  )}
-                </div>
+          {/* False Arrests Metric */}
+          <div className="flex items-center gap-3">
+            <div className="bg-amber-100 dark:bg-amber-900 rounded-full p-2">
+              <AlertTriangle className="h-6 w-6 text-amber-600 dark:text-amber-300" />
+            </div>
+            <div>
+              <div className="flex items-center gap-1">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <h3 className="text-sm font-medium flex items-center gap-1 cursor-help">
+                      False Arrests
+                    </h3>
+                  </PopoverTrigger>
+                  <PopoverContent side="top" className="text-sm w-80">
+                    <p>Percentage of arrests involving innocent individuals. Lower values indicate more accurate policing.</p>
+                  </PopoverContent>
+                </Popover>
               </div>
-            </CardContent>
-          </Card>
+              <div className="flex items-center">
+                <span className={`text-base font-bold ${getFalseArrestColor(avgFalseArrest)}`}>
+                  {avgFalseArrest.toFixed(1)}%
+                </span>
+                {getChangeIndicator(falseArrestChange, true)}
+              </div>
+            </div>
+          </div>
 
-          {/* 4. Community Trust */}
-          <Card className="overflow-hidden">
-            <CardContent className="p-3">
-              <div className="flex flex-col items-center">
-                <div className="flex items-center gap-1 mb-1">
-                  <span className="text-xs font-medium">Community Trust</span>
-                  <Popover>
-                    <PopoverTrigger>
-                      <InfoIcon className="h-3 w-3 text-muted-foreground cursor-pointer" />
-                    </PopoverTrigger>
-                    <PopoverContent className="w-80">
-                      <p className="text-sm">
-                        Average trust across all districts. Higher trust leads to better cooperation with police and more
-                        crime reporting.
-                      </p>
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Badge variant="outline" className={`px-2 py-1 text-lg ${getTrustColor(avgTrust)}`}>
-                    {avgTrust.toFixed(1)}%
-                  </Badge>
-                  
-                  {/* Show trend indicator if after round 1 */}
-                  {currentRound > 1 && getTrend(avgTrust, 'avgTrust') !== 'neutral' && (
-                    <span className={`ml-1 ${isTrendPositive(getTrend(avgTrust, 'avgTrust'), 'avgTrust') ? 'text-green-600' : 'text-red-600'}`}>
-                      {getTrend(avgTrust, 'avgTrust') === 'up' ? (
-                        <TrendingUp className="h-5 w-5" />
-                      ) : (
-                        <TrendingDown className="h-5 w-5" />
-                      )}
-                    </span>
-                  )}
-                </div>
+          {/* Population Metric */}
+          <div className="flex items-center gap-3">
+            <div className="bg-green-100 dark:bg-green-900 rounded-full p-2">
+              <Users className="h-6 w-6 text-green-600 dark:text-green-300" />
+            </div>
+            <div>
+              <div className="flex items-center gap-1">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <h3 className="text-sm font-medium flex items-center gap-1 cursor-help">
+                      Population
+                    </h3>
+                  </PopoverTrigger>
+                  <PopoverContent side="top" className="text-sm w-80">
+                    <p>Total city population. Growth indicates effective policing and high trust.</p>
+                  </PopoverContent>
+                </Popover>
               </div>
-            </CardContent>
-          </Card>
+              <div className="flex items-center">
+                <span className="text-base font-bold">
+                  {totalPopulation.toLocaleString()}
+                </span>
+                {populationChange !== 0 && (
+                  <div className={`flex items-center gap-0.5 text-xs ml-1 ${populationChange > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                    {populationChange > 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                    <span>{Math.abs(populationChange).toLocaleString()}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
 
-          {/* 5. Racial Disparity */}
-          <Card className="overflow-hidden">
-            <CardContent className="p-3">
-              <div className="flex flex-col items-center">
-                <div className="flex items-center gap-1 mb-1">
-                  <span className="text-xs font-medium">Racial Disparity</span>
-                  <Popover>
-                    <PopoverTrigger>
-                      <InfoIcon className="h-3 w-3 text-muted-foreground cursor-pointer" />
-                    </PopoverTrigger>
-                    <PopoverContent className="w-80">
-                      <p className="text-sm">
-                        Measures the difference in arrest rates between racial groups. Higher values may indicate racial
-                        bias in policing.
-                      </p>
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                <Badge variant="outline" className={`px-2 py-1 text-lg ${getBiasColor(racialBias)}`}>
-                  {(racialBias / 2).toFixed(1)}%
-                </Badge>
+          {/* Budget Metric */}
+          <div className="flex items-center gap-3">
+            <div className="bg-emerald-100 dark:bg-emerald-900 rounded-full p-2">
+              <DollarSign className="h-6 w-6 text-emerald-600 dark:text-emerald-300" />
+            </div>
+            <div>
+              <div className="flex items-center gap-1">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <h3 className="text-sm font-medium flex items-center gap-1 cursor-help">
+                      Budget
+                    </h3>
+                  </PopoverTrigger>
+                  <PopoverContent side="top" className="text-sm w-80">
+                    <p>Available funds for actions and police salaries. Tax revenue depends on district population and safety.</p>
+                  </PopoverContent>
+                </Popover>
               </div>
-            </CardContent>
-          </Card>
+              <div className="flex items-center">
+                <span className={`text-base font-bold ${gameMetrics.budget < 250 ? 'text-red-600 dark:text-red-400' : ''}`}>
+                  ${gameMetrics.budget}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Add Progress Bars for Key Metrics */}
+        <div className="grid grid-cols-3 mt-4 gap-6">
+          <div>
+            <div className="flex justify-between items-center mb-1">
+              <span className="text-xs">Community Trust</span>
+              <span className={`text-xs ${getTrustColor(avgTrust)}`}>
+                {avgTrust.toFixed(1)}%
+              </span>
+            </div>
+            <Progress value={avgTrust} className="h-1.5" 
+              indicatorClassName={`
+                ${avgTrust >= 70 ? 'bg-green-500' : 
+                  avgTrust >= 40 ? 'bg-yellow-500' : 'bg-red-500'}
+              `}
+            />
+          </div>
+          
+          <div>
+            <div className="flex justify-between items-center mb-1">
+              <span className="text-xs">Crime Rate</span>
+              <span className={`text-xs ${getCrimeColor(avgCrime)}`}>
+                {avgCrime.toFixed(1)}%
+              </span>
+            </div>
+            <Progress value={100 - avgCrime} className="h-1.5"
+              indicatorClassName={`
+                ${avgCrime <= 30 ? 'bg-green-500' : 
+                  avgCrime <= 60 ? 'bg-yellow-500' : 'bg-red-500'}
+              `}
+            />
+          </div>
+          
+          <div>
+            <div className="flex justify-between items-center mb-1">
+              <span className="text-xs">False Arrest Rate</span>
+              <span className={`text-xs ${getFalseArrestColor(avgFalseArrest)}`}>
+                {avgFalseArrest.toFixed(1)}%
+              </span>
+            </div>
+            <Progress value={100 - (avgFalseArrest * 2)} className="h-1.5"
+              indicatorClassName={`
+                ${avgFalseArrest <= 10 ? 'bg-green-500' : 
+                  avgFalseArrest <= 20 ? 'bg-yellow-500' : 'bg-red-500'}
+              `}
+            />
+          </div>
         </div>
       </CardContent>
     </Card>
   )
 }
-

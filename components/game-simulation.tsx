@@ -12,7 +12,7 @@ export default function GameSimulation() {
   
   // Update initial values to create more extreme starting conditions
   const [gameMetrics, setGameMetrics] = useState({
-    budget: 1000, // Starting budget
+    budget: 800, // Reduced from 1000 to increase challenge
     income: 0,    // Current round income
     expenses: 0,  // Current round expenses
     population: {
@@ -22,22 +22,22 @@ export default function GameSimulation() {
       district4: 12000,
     },
     communityTrust: {
-      district1: 90, // Increased from 85
+      district1: 90, 
       district2: 60,
-      district3: 15, // Decreased from 30
-      district4: 45,
+      district3: 15, // Critical issue - extremely low trust
+      district4: 35, // Changed from 45 to create more urgent situation
     },
-    crimesReported: { // Changed from crimeRate
-      district1: 40,  // Was 10% crime rate, now 40 actual crimes
-      district2: 160, // Was 40% crime rate, now 160 actual crimes
-      district3: 340, // Was 85% crime rate, now 340 actual crimes
-      district4: 200, // Was 50% crime rate, now 200 actual crimes
+    crimesReported: {
+      district1: 18,
+      district2: 45,
+      district3: 95,  // Increased from 85 to make it a more pressing challenge
+      district4: 65,  // Increased from 50 to make it more urgent
     },
     arrests: { // New metric
-      district1: 32,  // 80% clearance rate (arrests/crimes)
-      district2: 96,  // 60% clearance rate
-      district3: 136, // 40% clearance rate
-      district4: 120, // 60% clearance rate
+      district1: 14,  // ~80% clearance rate (arrests/crimes)
+      district2: 22,  // ~50% clearance rate
+      district3: 25,  // ~30% clearance rate
+      district4: 25,  // ~50% clearance rate
     },
     falseArrestRate: {
       district1: 5,
@@ -127,6 +127,12 @@ export default function GameSimulation() {
     return actionNames[actionId] || actionId;
   };
 
+  // Add state to track special events that have occurred
+  const [triggeredEvents, setTriggeredEvents] = useState([]);
+
+  // Add state to store special events for alert display
+  const [currentSpecialEvents, setCurrentSpecialEvents] = useState([]);
+
   const startGame = () => {
     setGameState("playing")
   }
@@ -151,12 +157,12 @@ export default function GameSimulation() {
     let expenses = 0;
     let budgetChanges = [];
 
-    // Calculate income based on population (tax revenue)
+    // Calculate income based on population with updated rates (more significant impact)
     for (const district of ["district1", "district2", "district3", "district4"]) {
-      // Different districts have different tax rates
-      let taxRatePerCapita = district === "district1" ? 0.02 : 
-                              district === "district2" ? 0.015 : 
-                              district === "district3" ? 0.01 : 0.0125;
+      // Different districts have different tax rates - increased impact
+      let taxRatePerCapita = district === "district1" ? 0.035 : 
+                             district === "district2" ? 0.025 : 
+                             district === "district3" ? 0.012 : 0.018;
       
       const districtIncome = Math.round(newMetrics.population[district] * taxRatePerCapita);
       income += districtIncome;
@@ -175,9 +181,18 @@ export default function GameSimulation() {
 
     // STEP 0: Natural deterioration - all districts naturally get worse each round if no action is taken
     // This creates urgency and makes the "do nothing" approach lead to bad outcomes
+    // Make certain districts deteriorate faster to create pressing challenges
     for (const district of ["district1", "district2", "district3", "district4"]) {
-      // Natural crime increase now uses absolute numbers
-      const naturalCrimeIncrease = district === "district3" ? 16 : 8;
+      // For early rounds (1-3), make South Side and Eastside deteriorate faster
+      const isEarlyRound = currentRound <= 3;
+      const isPriorityCrisisDistrict = district === "district3" || district === "district4";
+      
+      // Natural crime increase - exaggerated in crisis districts in early rounds
+      const naturalCrimeIncrease = district === "district1" ? 3 : 
+                                  district === "district2" ? 6 : 
+                                  district === "district3" ? (isEarlyRound ? 15 : 12) : 
+                                  (isEarlyRound ? 10 : 8);
+                                  
       newMetrics.crimesReported[district] = Math.min(500, newMetrics.crimesReported[district] + naturalCrimeIncrease);
       metricChanges[district].crimes += naturalCrimeIncrease;
       
@@ -187,15 +202,24 @@ export default function GameSimulation() {
       newMetrics.arrests[district] += newArrests;
       metricChanges[district].arrests += newArrests;
       
-      // Natural trust erosion - trust slowly declines if not maintained
-      const naturalTrustDecrease = district === "district3" ? 3 : 2;
+      // Natural trust erosion - exaggerated in priority districts in early rounds
+      const naturalTrustDecrease = district === "district3" ? (isEarlyRound ? 7 : 5) : 
+                                  district === "district4" ? (isEarlyRound ? 5 : 3) : 3;
+      
       newMetrics.communityTrust[district] = Math.max(5, newMetrics.communityTrust[district] - naturalTrustDecrease);
       metricChanges[district].trust -= naturalTrustDecrease;
       
       // False arrests tend to rise naturally without supervision/training
-      const naturalFalseArrestIncrease = district === "district1" ? 1 : 2; // Lower in wealthy areas
+      const naturalFalseArrestIncrease = district === "district1" ? 2 : 3; // Lower in wealthy areas
       newMetrics.falseArrestRate[district] = Math.min(50, newMetrics.falseArrestRate[district] + naturalFalseArrestIncrease);
       metricChanges[district].falseArrest += naturalFalseArrestIncrease;
+
+      // Add warning for critical conditions in early rounds
+      if (isEarlyRound && isPriorityCrisisDistrict && 
+          newMetrics.communityTrust[district] < 20 && 
+          newMetrics.crimesReported[district] > 90) {
+        changes.push(`⚠️ CRITICAL: ${getDistrictName(district)} requires immediate attention - crime and trust have reached crisis levels`);
+      }
     }
 
     // Add a comment about natural deterioration to changes list
@@ -371,14 +395,45 @@ export default function GameSimulation() {
     // STEP 2: Apply effects of police allocation with enhanced mechanics
     for (const district of ["district1", "district2", "district3", "district4"]) {
       // Calculate police coverage and total officers
-      const totalPolice = policeAllocation[district].day + policeAllocation[district].night;
-      const policeCoverage = totalPolice / 10; // 10 would be max coverage (5 day + 5 night)
+      const dayOfficers = policeAllocation[district].day;
+      const nightOfficers = policeAllocation[district].night;
+      const totalPolice = dayOfficers + nightOfficers;
+      
+      // Apply district-specific effectiveness multipliers for day/night shifts
+      let dayEffectiveness, nightEffectiveness;
+      
+      // Different effectiveness by district and shift
+      switch(district) {
+        case "district1": // Downtown - more effective during day (white collar crime)
+          dayEffectiveness = 1.0;  // 100% effectiveness
+          nightEffectiveness = 0.7; // 70% effectiveness
+          break;
+        case "district2": // Westside - slightly more effective at night
+          dayEffectiveness = 0.9;  // 90% effectiveness 
+          nightEffectiveness = 1.1; // 110% effectiveness
+          break;
+        case "district3": // South Side - much more effective at night (high night crime)
+          dayEffectiveness = 0.7;  // 70% effectiveness
+          nightEffectiveness = 1.3; // 130% effectiveness
+          break;
+        case "district4": // Eastside - more effective at night
+          dayEffectiveness = 0.8;  // 80% effectiveness
+          nightEffectiveness = 1.2; // 120% effectiveness
+          break;
+        default:
+          dayEffectiveness = 1.0;
+          nightEffectiveness = 1.0;
+      }
+      
+      // Calculate weighted police coverage based on effectiveness
+      const effectivePoliceForce = (dayOfficers * dayEffectiveness) + (nightOfficers * nightEffectiveness);
+      const policeCoverage = effectivePoliceForce / 10; // 10 would be max coverage
       
       // IMPLEMENT UNDER-POLICING MECHANICS
       if (totalPolice <= 2) {
         // Under-policed district - crime increases, trust decreases
-        const crimeIncrease = district === "district3" ? 15 : 10; // Higher crime increase in high crime area
-        const trustDecrease = 5; // Trust decreases as people feel unsafe
+        const crimeIncrease = district === "district3" ? 20 : 15; // Higher crime increase in high crime area
+        const trustDecrease = 8; // Trust decreases as people feel unsafe
         
         newMetrics.crimesReported[district] = Math.min(500, newMetrics.crimesReported[district] + crimeIncrease);
         newMetrics.communityTrust[district] = Math.max(5, newMetrics.communityTrust[district] - trustDecrease);
@@ -396,17 +451,17 @@ export default function GameSimulation() {
         
         // Different effects based on district demographics
         if (district === "district1") { // Downtown - affluent, white
-          crimeDecrease = 5; // Moderate crime decrease
-          trustChange = 2;   // Small trust increase
+          crimeDecrease = 6; // Increased crime decrease
+          trustChange = 1;   // Reduced trust increase (diminishing returns)
           falseArrestChange = -1; // Small decrease in false arrests
         } else if (district === "district3") { // South Side - low income, minority
-          crimeDecrease = 8; // Significant crime decrease
-          trustChange = -10; // Severe trust decrease
-          falseArrestChange = 8; // Large increase in false arrests
+          crimeDecrease = 10; // Significant crime decrease
+          trustChange = -12; // More severe trust decrease
+          falseArrestChange = 10; // Larger increase in false arrests
         } else { // Mixed districts
-          crimeDecrease = 6; // Moderate crime decrease
-          trustChange = -5;  // Moderate trust decrease
-          falseArrestChange = 3; // Moderate increase in false arrests
+          crimeDecrease = 7; // Moderate crime decrease
+          trustChange = -7;  // Moderate trust decrease
+          falseArrestChange = 4; // Moderate increase in false arrests
         }
         
         newMetrics.crimesReported[district] = Math.max(5, newMetrics.crimesReported[district] - crimeDecrease);
@@ -421,17 +476,43 @@ export default function GameSimulation() {
       }
       // NORMAL POLICING LEVEL
       else {
-        // Original mechanics for police allocation
-        const crimeReduction = Math.round(policeCoverage * 3); // Up to 3% reduction
+        // Use district-specific day/night effectiveness for crime reduction
+        // Base effectiveness depends on proper balance of officers
+        const optimalDayNightRatio = district === "district1" ? 0.5 : // equal day/night is best
+                                     district === "district2" ? 0.45 : // slightly more night
+                                     district === "district3" ? 0.35 : // much more night
+                                     0.4; // more night for district4
+                                     
+        // Calculate how close the allocation is to optimal
+        const currentDayNightRatio = dayOfficers / (totalPolice || 1);
+        const ratioDistance = Math.abs(currentDayNightRatio - optimalDayNightRatio);
+        
+        // Penalize effectiveness if the ratio is far from optimal
+        const allocationEffectiveness = Math.max(0.5, 1 - ratioDistance);
+        
+        // Calculate crime reduction based on weighted allocation and optimal ratio
+        const crimeReduction = Math.round(policeCoverage * 3 * allocationEffectiveness);
         newMetrics.crimesReported[district] = Math.max(5, newMetrics.crimesReported[district] - crimeReduction);
         
+        // Trust changes depend on optimal allocation and district
         let trustChange = 0;
-        if (district === "district1") {
-          trustChange = Math.round(policeCoverage * 2);
-        } else if (district === "district3") {
-          trustChange = totalPolice > 4 ? -2 : 1;
+        if (ratioDistance < 0.2) { // Close to optimal ratio
+          trustChange = district === "district1" ? 2 : 
+                       district === "district3" ? 3 : 2;
         } else {
-          trustChange = totalPolice > 6 ? -1 : 1;
+          trustChange = district === "district1" ? 0 : 
+                       district === "district3" ? -1 : 0;
+        }
+        
+        // Bonus for district3 if allocating properly for night shift
+        if (district === "district3" && nightOfficers >= 4 && dayOfficers >= 2) {
+          trustChange += 2;
+          changes.push(`Effective shift balance in ${getDistrictName(district)} improved community relations.`);
+        }
+        
+        // Bonus for district1 if maintaining balanced coverage
+        if (district === "district1" && Math.abs(dayOfficers - nightOfficers) <= 1) {
+          trustChange += 1;
         }
         
         newMetrics.communityTrust[district] = Math.min(100, Math.max(5, newMetrics.communityTrust[district] + trustChange));
@@ -442,6 +523,11 @@ export default function GameSimulation() {
         }
         if (trustChange !== 0) {
           metricChanges[district].trust += trustChange;
+        }
+        
+        // Add feedback about allocation effectiveness
+        if (ratioDistance < 0.1) {
+          changes.push(`Optimal police shift allocation in ${getDistrictName(district)}: Crime rate -${crimeReduction}, Trust ${trustChange >= 0 ? '+' : ''}${trustChange}%`);
         }
       }
       
@@ -490,39 +576,114 @@ export default function GameSimulation() {
       metricChanges[district].falseArrest += falseArrestChange;
     }
 
-    // Update population based on crime rate, trust, and over-policing
+    // Enhanced population impact - much stronger consequences for trust and crime issues
     for (const district of ["district1", "district2", "district3", "district4"]) {
-      // Population changes based on conditions
+      // Population changes based on conditions - higher sensitivity
       let populationChange = 0;
+      let populationChangeReasons = [];
       
-      // High crime rate causes people to leave
-      if (newMetrics.crimesReported[district] > 300) {
-        populationChange -= Math.round(newMetrics.population[district] * 0.02); // 2% leave
-        changes.push(`High crime in ${getDistrictName(district)} caused population decline.`);
+      // High crime rate causes more people to leave
+      if (newMetrics.crimesReported[district] > 80) { // Lower threshold
+        const crimePopulationLoss = Math.round(newMetrics.population[district] * 
+          (newMetrics.crimesReported[district] > 150 ? 0.035 : 0.02)); // Up to 3.5% leave
+        populationChange -= crimePopulationLoss;
+        populationChangeReasons.push(`high crime (-${crimePopulationLoss})`);
       }
       
-      // Low trust causes people to leave
+      // Low trust causes more people to leave - stronger impact
       if (newMetrics.communityTrust[district] < 30) {
-        populationChange -= Math.round(newMetrics.population[district] * 0.01); // 1% leave
-        changes.push(`Low trust in ${getDistrictName(district)} caused population decline.`);
+        const trustPopulationLoss = Math.round(newMetrics.population[district] * 
+          (newMetrics.communityTrust[district] < 20 ? 0.03 : 0.015)); // Up to 3% leave
+        populationChange -= trustPopulationLoss;
+        populationChangeReasons.push(`low trust (-${trustPopulationLoss})`);
       }
       
       // Over-policing causes people to leave
       const totalPolice = policeAllocation[district].day + policeAllocation[district].night;
       if (totalPolice >= 8) {
-        populationChange -= Math.round(newMetrics.population[district] * 0.015); // 1.5% leave
-        changes.push(`Over-policing in ${getDistrictName(district)} caused population decline.`);
+        const overPolicingLoss = Math.round(newMetrics.population[district] * 0.02); // 2% leave
+        populationChange -= overPolicingLoss;
+        populationChangeReasons.push(`over-policing (-${overPolicingLoss})`);
       }
       
-      // Safe district with high trust attracts people
-      if (newMetrics.crimesReported[district] < 100 && newMetrics.communityTrust[district] > 70) {
-        populationChange += Math.round(newMetrics.population[district] * 0.02); // 2% growth
-        changes.push(`Safe and trusted ${getDistrictName(district)} attracted new residents.`);
+      // Safe district with high trust attracts people - stronger positive impact
+      if (newMetrics.crimesReported[district] < 40 && newMetrics.communityTrust[district] > 70) {
+        const attractedPopulation = Math.round(newMetrics.population[district] * 0.025); // 2.5% growth
+        populationChange += attractedPopulation;
+        populationChangeReasons.push(`improved conditions (+${attractedPopulation})`);
       }
       
-      // Apply population changes
-      newMetrics.population[district] += populationChange;
-      metricChanges[district].population = populationChange;
+      // Apply population changes with specific message
+      if (populationChange !== 0) {
+        newMetrics.population[district] += populationChange;
+        metricChanges[district].population = populationChange;
+        
+        if (populationChange < 0) {
+          changes.push(`${getDistrictName(district)} lost ${Math.abs(populationChange).toLocaleString()} residents due to ${populationChangeReasons.join(", ")}.`);
+        } else {
+          changes.push(`${getDistrictName(district)} gained ${populationChange.toLocaleString()} new residents due to ${populationChangeReasons.join(", ")}.`);
+        }
+      }
+    }
+
+    // STEP 3: Check for special event triggers
+    const specialEvents = checkForSpecialEvents(newMetrics, policeAllocation, metricChanges);
+    
+    if (specialEvents.length > 0) {
+      // Store the special events to display in the round summary
+      setCurrentSpecialEvents(specialEvents);
+      
+      // Add the events to the changes list
+      changes.push(...specialEvents.map(event => event.message));
+      
+      // Apply the effects of the events
+      specialEvents.forEach(event => {
+        // Apply budget effects
+        if (event.budgetEffect) {
+          newMetrics.budget += event.budgetEffect;
+          budgetChanges.push(`${event.title}: ${event.budgetEffect > 0 ? '+' : ''}$${event.budgetEffect}`);
+        }
+        
+        // Apply trust effects to specific or all districts
+        if (event.trustEffect) {
+          if (event.district) {
+            // District-specific trust effect
+            newMetrics.communityTrust[event.district] = Math.min(100, 
+              Math.max(5, newMetrics.communityTrust[event.district] + event.trustEffect));
+            metricChanges[event.district].trust += event.trustEffect;
+          } else {
+            // Global trust effect
+            for (const district of ["district1", "district2", "district3", "district4"]) {
+              newMetrics.communityTrust[district] = Math.min(100, 
+                Math.max(5, newMetrics.communityTrust[district] + event.trustEffect));
+              metricChanges[district].trust += event.trustEffect;
+            }
+          }
+        }
+        
+        // Apply crime effects
+        if (event.crimeEffect) {
+          if (event.district) {
+            // District-specific crime effect
+            newMetrics.crimesReported[event.district] = Math.max(5, 
+              newMetrics.crimesReported[event.district] + event.crimeEffect);
+            metricChanges[event.district].crimes += event.crimeEffect;
+          } else {
+            // Global crime effect
+            for (const district of ["district1", "district2", "district3", "district4"]) {
+              newMetrics.crimesReported[district] = Math.max(5, 
+                newMetrics.crimesReported[district] + event.crimeEffect);
+              metricChanges[district].crimes += event.crimeEffect;
+            }
+          }
+        }
+        
+        // Add this event to triggered events history
+        setTriggeredEvents(prev => [...prev, { ...event, round: currentRound }]);
+      });
+    } else {
+      // Clear any previous special events
+      setCurrentSpecialEvents([]);
     }
 
     // Update budget
@@ -586,6 +747,31 @@ export default function GameSimulation() {
       feedback += `The heavy police presence in ${overPolicedDistricts.join(" and ")} may be causing community tension. `
     }
 
+    // Add critical feedback for urgent issues in early rounds
+    if (currentRound <= 3) {
+      if (newMetrics.crimesReported.district3 > 90 && newMetrics.communityTrust.district3 < 20) {
+        feedback += "URGENT: South Side is in a state of crisis with extremely high crime and low trust. Immediate action required. ";
+      }
+      if (newMetrics.crimesReported.district4 > 70 && newMetrics.communityTrust.district4 < 40) {
+        feedback += "ATTENTION: Eastside is developing serious issues that should be addressed promptly. ";
+      }
+    }
+
+    // Add detailed feedback on population changes and economic impact
+    const totalPopulationChange = 
+      metricChanges.district1.population + 
+      metricChanges.district2.population +
+      metricChanges.district3.population + 
+      metricChanges.district4.population;
+    
+    if (Math.abs(totalPopulationChange) > 500) {
+      if (totalPopulationChange < 0) {
+        feedback += `The city lost ${Math.abs(totalPopulationChange).toLocaleString()} residents this round, reducing tax revenue by approximately $${Math.round(Math.abs(totalPopulationChange) * 0.02).toLocaleString()}. `;
+      } else {
+        feedback += `The city attracted ${totalPopulationChange.toLocaleString()} new residents this round, increasing tax revenue by approximately $${Math.round(totalPopulationChange * 0.02).toLocaleString()}. `;
+      }
+    }
+
     // Add budget info to round summary
     setRoundSummary({
       changes,
@@ -597,7 +783,8 @@ export default function GameSimulation() {
         income: income,
         expenses: expenses,
         details: budgetChanges
-      }
+      },
+      specialEvents: specialEvents // Make sure special events are passed to the round summary
     })
 
     // Add to game log
@@ -648,7 +835,12 @@ export default function GameSimulation() {
       },
       population: {
         ...newMetrics.population
-      }
+      },
+      specialEvents: specialEvents.map(event => ({
+        title: event.title,
+        message: event.message,
+        type: event.type
+      })),
     }
     
     setGameLog(prevLog => [...prevLog, logEntry])
@@ -672,6 +864,124 @@ export default function GameSimulation() {
       setGameState("results")
     }
   }
+
+  // Add function to check for special events
+  const checkForSpecialEvents = (metrics, allocation, changes) => {
+    const triggeredEvents = [];
+    
+    // 1. Over-policing in minority neighborhoods
+    if (allocation.district3.day + allocation.district3.night > 7 && 
+        metrics.communityTrust.district3 < 25) {
+      triggeredEvents.push({
+        type: "negative",
+        title: "Over-policing Protests",
+        message: "Protests erupt over aggressive policing in South Side minority neighborhoods",
+        district: "district3",
+        trustEffect: -15, // Major trust impact in South Side
+        budgetEffect: -200, // Budget penalty to represent cost of protest handling
+        round: currentRound
+      });
+    }
+    
+    // 2. High Crime Crisis
+    for (const district of ["district1", "district2", "district3", "district4"]) {
+      const previousHighCrime = gameLog.length >= 2 && 
+        gameLog[gameLog.length-1].metrics.crimesReported[district] > 80 &&
+        gameLog[gameLog.length-2].metrics.crimesReported[district] > 80;
+        
+      if (metrics.crimesReported[district] > 80 && previousHighCrime) {
+        triggeredEvents.push({
+          type: "negative",
+          title: "Crime Crisis",
+          message: `Major crime incident makes headlines in ${getDistrictName(district)}, undermining public confidence`,
+          district: district,
+          trustEffect: -10, // Trust drops significantly
+          budgetEffect: -100, // Emergency response costs
+          round: currentRound
+        });
+      }
+    }
+    
+    // 3. Community Recovery Event
+    for (const district of ["district2", "district3", "district4"]) {
+      const previousLowTrust = gameLog.length >= 1 && 
+        gameLog[gameLog.length-1].metrics.communityTrust[district] < 40;
+        
+      if (metrics.communityTrust[district] >= 60 && previousLowTrust) {
+        triggeredEvents.push({
+          type: "positive",
+          title: "Community Recovery",
+          message: `Community engagement success story in ${getDistrictName(district)} highlighted in media`,
+          trustEffect: 5, // Small trust boost in all districts
+          round: currentRound
+        });
+      }
+    }
+    
+    // 4. Racial Profiling Scandal
+    for (const district of ["district1", "district2", "district3", "district4"]) {
+      if (metrics.falseArrestRate[district] > 30 && 
+          allocation[district].day + allocation[district].night > 5) {
+        
+        // Only trigger if it hasn't happened in last 3 rounds in this district
+        const recentSimilarEvent = triggeredEvents.some(e => 
+          e.type === "racial-profiling" && e.district === district && 
+          currentRound - e.round <= 3);
+          
+        if (!recentSimilarEvent) {
+          triggeredEvents.push({
+            type: "racial-profiling",
+            title: "Racial Profiling Scandal",
+            message: `Accusations of racial profiling emerge in ${getDistrictName(district)}`,
+            district: district,
+            trustEffect: -8, // Trust drops
+            falseArrestEffect: 5, // More scrutiny reveals more false arrests
+            round: currentRound
+          });
+        }
+      }
+    }
+    
+    // 5. Budget Windfall
+    if (metrics.communityTrust.district1 > 75 && 
+        metrics.communityTrust.district2 > 60 &&
+        metrics.communityTrust.district3 > 40 &&
+        metrics.communityTrust.district4 > 50) {
+      
+      // Only once per game, past the early rounds
+      if (currentRound > 5 && !triggeredEvents.some(e => e.type === "budget-windfall")) {
+        triggeredEvents.push({
+          type: "budget-windfall",
+          title: "Budget Windfall",
+          message: "Improved community relations attract state funding grant",
+          budgetEffect: 300, // Budget boost
+          round: currentRound
+        });
+      }
+    }
+    
+    // 6. Police Force Morale Event
+    const highFalseArrestDistricts = ["district1", "district2", "district3", "district4"]
+      .filter(d => metrics.falseArrestRate[d] > 25).length;
+      
+    if (highFalseArrestDistricts >= 3) {
+      // Only trigger if it hasn't happened in last 4 rounds
+      const recentSimilarEvent = triggeredEvents.some(e => 
+        e.type === "morale-crisis" && currentRound - e.round <= 4);
+        
+      if (!recentSimilarEvent) {
+        triggeredEvents.push({
+          type: "morale-crisis",
+          title: "Police Morale Crisis",
+          message: "High false arrest rates cause police morale crisis, reducing effectiveness",
+          crimeEffect: 5, // Crime increases across all districts
+          round: currentRound
+        });
+      }
+    }
+    
+    return triggeredEvents;
+  };
 
   const closeRoundSummary = () => {
     setShowRoundSummary(false)
@@ -713,9 +1023,9 @@ export default function GameSimulation() {
       district4: "",
     })
     setGameMetrics({
-      budget: 1000, // Starting budget
-      income: 0,    // Current round income
-      expenses: 0,  // Current round expenses
+      budget: 800, 
+      income: 0,
+      expenses: 0,
       population: {
         district1: 10000,  
         district2: 15000,
@@ -723,22 +1033,22 @@ export default function GameSimulation() {
         district4: 12000,
       },
       communityTrust: {
-        district1: 90, // Increased from 85
+        district1: 90,
         district2: 60,
-        district3: 15, // Decreased from 30
-        district4: 45,
+        district3: 15, // Critical issue - extremely low trust
+        district4: 35, // Changed from 45 to create more urgent situation
       },
-      crimesReported: { // Changed from crimeRate
-        district1: 40,  // Was 10% crime rate, now 40 actual crimes
-        district2: 160, // Was 40% crime rate, now 160 actual crimes
-        district3: 340, // Was 85% crime rate, now 340 actual crimes
-        district4: 200, // Was 50% crime rate, now 200 actual crimes
+      crimesReported: {
+        district1: 18,
+        district2: 45,
+        district3: 95,  // Increased from 85 to create more urgent challenge
+        district4: 65,  // Increased from 50 to create more urgent situation
       },
       arrests: { // New metric
-        district1: 32,  // 80% clearance rate (arrests/crimes)
-        district2: 96,  // 60% clearance rate
-        district3: 136, // 40% clearance rate
-        district4: 120, // 60% clearance rate
+        district1: 14,  // ~80% clearance rate (arrests/crimes)
+        district2: 22,  // ~50% clearance rate
+        district3: 25,  // ~30% clearance rate
+        district4: 25,  // ~50% clearance rate
       },
       falseArrestRate: {
         district1: 5,
@@ -772,6 +1082,7 @@ export default function GameSimulation() {
       district3: [],
       district4: []
     })
+    setTriggeredEvents([]);
   }
 
   if (gameState === "results") {
@@ -788,7 +1099,7 @@ export default function GameSimulation() {
       setDistrictActions={setDistrictActions}
       onNextRound={handleNextRound}
       showRoundSummary={showRoundSummary}
-      roundSummary={roundSummary}
+      roundSummary={{...roundSummary, specialEvents: currentSpecialEvents}}
       closeRoundSummary={closeRoundSummary}
       getDistrictName={getDistrictName}
       gameLog={gameLog}
