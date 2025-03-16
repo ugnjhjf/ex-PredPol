@@ -389,45 +389,7 @@ export function RoundSummary({ currentRound, gameMetrics, policeAllocation, roun
         </div>
       </div>
       
-      {/* How to continue */}
-      <Card className="mb-4 bg-muted/30">
-        <CardHeader className="py-3">
-          <CardTitle className="text-sm">How to Continue</CardTitle>
-        </CardHeader>
-        <CardContent className="py-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-background rounded-lg border p-3 flex items-start gap-3">
-              <div className="bg-blue-100 dark:bg-blue-900 rounded-md p-2 flex-shrink-0">
-                <span className="text-xl">🗺️</span>
-              </div>
-              <div>
-                <h4 className="font-medium text-sm mb-1">Districts Tab</h4>
-                <p className="text-xs text-muted-foreground">Adjust police allocation across districts and day/night shifts to reduce crime.</p>
-              </div>
-            </div>
-
-            <div className="bg-background rounded-lg border p-3 flex items-start gap-3">
-              <div className="bg-purple-100 dark:bg-purple-900 rounded-md p-2 flex-shrink-0">
-                <span className="text-xl">📈</span>
-              </div>
-              <div>
-                <h4 className="font-medium text-sm mb-1">Data Analytics Tab</h4>
-                <p className="text-xs text-muted-foreground">View detailed metrics and analyze trends across multiple rounds.</p>
-              </div>
-            </div>
-
-            <div className="bg-background rounded-lg border p-3 flex items-start gap-3">
-              <div className="bg-rose-100 dark:bg-rose-900 rounded-md p-2 flex-shrink-0">
-                <span className="text-xl">📜</span>
-              </div>
-              <div>
-                <h4 className="font-medium text-sm mb-1">Round History Tab</h4>
-                <p className="text-xs text-muted-foreground">Review past decisions and their outcomes for all previous rounds.</p>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      
     </div>
   )
 }

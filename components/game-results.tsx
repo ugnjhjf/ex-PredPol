@@ -37,8 +37,18 @@ export default function GameResults({ metrics, onReset, gameLog, gameEndReason =
   
   const totalScore = trustScore + crimeScore + falseArrestScore + equityScore
 
-  // Simplified grade calculation
+  // Simplified grade calculation - Modified to force F grade on bankruptcy
   const getGrade = (score) => {
+    // If game ended due to bankruptcy, force F grade regardless of score
+    if (gameEndReason === "bankrupt") {
+      return { 
+        letter: "F", 
+        label: "Failed", 
+        description: "Your city went bankrupt. Without proper budget management, even the best policing strategies cannot be sustained."
+      }
+    }
+    
+    // Normal grade calculation for completed games
     if (score >= 90) return { letter: "A", label: "Exceptional", description: "You've achieved a remarkable balance between crime reduction and community trust." }
     if (score >= 80) return { letter: "B+", label: "Excellent", description: "Your policing approach was highly effective with only minor shortcomings." }
     if (score >= 70) return { letter: "B", label: "Good", description: "You maintained a good balance between enforcement and community relations." }

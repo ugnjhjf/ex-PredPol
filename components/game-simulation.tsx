@@ -991,8 +991,8 @@ export default function GameSimulation() {
               e.type === "population-exodus" && e.district === district))) {
         triggeredEvents.push({
           type: "population-exodus",
-          title: "Population Exodus",
-          message: `Rising crime and falling trust cause middle-class exodus from ${getDistrictName(district)}`,
+          title: "Population Departure",
+          message: `Rising crime and falling trust cause the middle class to leave Eastside. ${getDistrictName(district)}`,
           district: district,
           trustEffect: -5,
           budgetEffect: -150,
