@@ -4,10 +4,12 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { HelpCircle, Users, CheckCircle2 } from "lucide-react";
+import { HelpCircle, Users, CheckCircle2, Sun, Moon, Shield, Info } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
 
 export default function CityMap({ 
   policeAllocation, 
@@ -19,14 +21,6 @@ export default function CityMap({
   implementedActions = {},
   availableActionPoints = 2
 }) {
-  // Add state to track which districts have expanded details
-  const [expandedInfo, setExpandedInfo] = useState({
-    district1: false,
-    district2: false,
-    district3: false,
-    district4: false
-  });
-
   // Add state for action selection dialog
   const [showActionDialog, setShowActionDialog] = useState(false);
   const [selectedDistrict, setSelectedDistrict] = useState(null);
@@ -40,30 +34,35 @@ export default function CityMap({
       emoji: "📹",
       title: "CCTV Surveillance",
       description: "Install cameras in public areas to monitor and deter crime.",
+      cost: 200,
     },
     {
       id: "app",
       emoji: "📱",
       title: "Crime Reporting App",
       description: "Allow citizens to anonymously report crimes via mobile app.",
+      cost: 150,
     },
     {
       id: "education",
       emoji: "🎓",
       title: "Public Education",
       description: "Hold community meetings and educational programs about policing.",
+      cost: 100,
     },
     {
       id: "drone",
       emoji: "🚁",
       title: "Drone Surveillance",
       description: "Deploy drones for aerial monitoring of high-crime areas.",
+      cost: 300,
     },
     {
       id: "facial",
       emoji: "👤",
       title: "Facial Recognition",
       description: "Use AI-powered facial recognition to identify suspects.",
+      cost: 250,
     }
   ];
 
@@ -74,11 +73,41 @@ export default function CityMap({
     setShowActionDialog(true);
   };
 
-  // Function to confirm action selection - Updated for multiple actions
+  // Function to confirm action selection - Updated to allow same action in different districts
   const confirmAction = () => {
     if (!selectedDistrict || !selectedAction) return;
     
-    // Create new object based on current actions rather than clearing all
+    // Calculate how many actions are already selected
+    const currentActionCount = Object.values(districtActions).filter(action => action !== "").length;
+    
+    // Check if this district already has an action and we're just changing it
+    const isReplacingExistingAction = districtActions[selectedDistrict] !== "";
+    
+    // Check if we're exceeding the action limit
+    if (!isReplacingExistingAction && currentActionCount >= availableActionPoints) {
+      toast({
+        title: "Action Limit Reached",
+        description: `You can only select ${availableActionPoints} actions per round. Remove an action before adding a new one.`,
+        variant: "destructive",
+        duration: 3000,
+      });
+      setShowActionDialog(false);
+      return;
+    }
+    
+    // Check if this action is already implemented in this district
+    if (implementedActions[selectedDistrict]?.includes(selectedAction)) {
+      toast({
+        title: "Action Already Implemented",
+        description: `${actions.find(a => a.id === selectedAction)?.title} has already been implemented in ${getDistrictName(selectedDistrict)}.`,
+        variant: "destructive",
+        duration: 3000,
+      });
+      setShowActionDialog(false);
+      return;
+    }
+    
+    // Create new object based on current actions
     const newDistrictActions = {
       ...districtActions,
     };
@@ -96,6 +125,25 @@ export default function CityMap({
     toast({
       title: "Action Selected",
       description: `${actions.find(a => a.id === selectedAction)?.title} will be implemented in ${getDistrictName(selectedDistrict)} this round.`,
+      duration: 3000,
+    });
+  };
+
+  // Function to clear an action for a district
+  const clearAction = (district) => {
+    const newDistrictActions = {
+      ...districtActions,
+    };
+
+    // Clear the action for this district
+    newDistrictActions[district] = "";
+    
+    // Update the state
+    setDistrictActions(newDistrictActions);
+    
+    toast({
+      title: "Action Removed",
+      description: `Action for ${getDistrictName(district)} has been removed.`,
       duration: 3000,
     });
   };
@@ -122,13 +170,6 @@ export default function CityMap({
       case "facial": return "bg-rose-100 text-rose-800 dark:bg-rose-900 dark:text-rose-300";
       default: return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300";
     }
-  };
-
-  const toggleDistrictInfo = (district) => {
-    setExpandedInfo(prev => ({
-      ...prev,
-      [district]: !prev[district]
-    }));
   };
 
   const districtEmojis = {
@@ -176,8 +217,8 @@ export default function CityMap({
     return demographics[district];
   };
   
-  // Helper function to render pie charts for demographics
-  const PieChart = ({ data, colorMap, size = 60 }) => {
+  // Helper function to render pie charts for demographics - Updated to make charts larger
+  const PieChart = ({ data, colorMap, size = 70 }) => {
     const total = Object.values(data).reduce((sum, value) => sum + value, 0);
     let currentAngle = 0;
     const center = size / 2;
@@ -252,18 +293,6 @@ export default function CityMap({
     return "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200"
   }
 
-  const incrementPolice = (district, shift) => {
-    if (policeAllocation.unallocated > 0) {
-      handlePoliceAllocation(district, shift, (policeAllocation[district][shift] + 1).toString())
-    }
-  }
-
-  const decrementPolice = (district, shift) => {
-    if (policeAllocation[district][shift] > 1) {
-      handlePoliceAllocation(district, shift, (policeAllocation[district][shift] - 1).toString())
-    }
-  }
-
   // Add info tooltips about district-specific shift effectiveness
   const getShiftEffectivenessInfo = (district) => {
     switch(district) {
@@ -282,287 +311,385 @@ export default function CityMap({
 
   // Calculate used action points
   const usedActionPoints = Object.values(districtActions).filter(action => action !== "").length;
-  const remainingActionPoints = Math.max(0, 2 - usedActionPoints);
+  const remainingActionPoints = Math.max(0, availableActionPoints - usedActionPoints);
 
   return (
-    <div className="p-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="p-3">
+      {/* Action Points Indicator */}
+      <div className="mb-3 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium">Available Actions: {remainingActionPoints}/{availableActionPoints}</span>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+            </PopoverTrigger>
+            <PopoverContent className="w-80 p-3 text-sm">
+              <p>You can implement up to {availableActionPoints} actions per round. The same action can be used in different districts, but each district can only have one action per round. You can change your selections before ending the round.</p>
+            </PopoverContent>
+          </Popover>
+        </div>
+        <Progress 
+          value={(usedActionPoints / availableActionPoints) * 100} 
+          className="w-40 h-2" 
+        />
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {["district1", "district2", "district3", "district4"].map((district) => {
           const demographics = getDistrictDemographics(district);
           const districtImplementedActions = implementedActions[district] || [];
           const totalPolice = policeAllocation[district].day + policeAllocation[district].night;
+          const hasSelectedAction = districtActions[district] !== "";
           
           return (
             <Card 
               key={district} 
-              className={`border ${districtColors[district]}`}
+              className={`border ${districtColors[district]} shadow-sm`}
             >
-              <CardHeader className={`py-3 ${districtHeaderColors[district]}`}>
+              <CardHeader className={`py-1.5 px-3 ${districtHeaderColors[district]}`}>
                 <div className="flex justify-between items-center">
-                  <CardTitle className="flex items-center gap-1.5">
-                    <span className="text-xl">{districtEmojis[district]}</span>
+                  <CardTitle className="text-sm flex items-center gap-1">
+                    <span className="text-base">{districtEmojis[district]}</span>
                     {getDistrictName(district)}
                   </CardTitle>
-                  <Button 
-                    size="sm" 
-                    onClick={() => openActionDialog(district)}
-                    disabled={Object.values(districtActions).filter(Boolean).length > 0 && !districtActions[district]}
-                  >
-                    Select Action
-                  </Button>
+                  {hasSelectedAction ? (
+                    <div className="flex items-center gap-2">
+                      <Badge 
+                        className={`${getActionBadgeColor(districtActions[district])} text-xs`}
+                        variant="outline"
+                      >
+                        {actions.find(a => a.id === districtActions[district])?.emoji} {getShortActionName(districtActions[district])}
+                      </Badge>
+                      <Button 
+                        size="sm" 
+                        variant="ghost"
+                        className="h-7 px-2 text-xs"
+                        onClick={() => clearAction(district)}
+                      >
+                        ✕
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button 
+                      size="sm" 
+                      variant="secondary"
+                      onClick={() => openActionDialog(district)}
+                      className="h-7 text-xs px-2.5"
+                      disabled={remainingActionPoints === 0 && !hasSelectedAction}
+                    >
+                      Select Action
+                    </Button>
+                  )}
                 </div>
-                <CardDescription>
+                <CardDescription className="text-xs">
                   {district === "district1" && "High income area, primarily white population"}
                   {district === "district2" && "Mixed income area with diverse population"}
                   {district === "district3" && "Low income area, primarily minority population"}
                   {district === "district4" && "Mixed demographic with historical tensions"}
                 </CardDescription>
               </CardHeader>
-              
-              {/* Use tabs to organize the district content */}
-              <Tabs defaultValue="overview" className="w-full">
-                <TabsList className="grid grid-cols-2 rounded-none border-t">
-                  <TabsTrigger value="overview" className="text-xs">Key Metrics</TabsTrigger>
-                  <TabsTrigger value="details" className="text-xs">Demographics</TabsTrigger>
-                </TabsList>
-                
-                {/* Overview Tab - Shows key metrics and police allocation */}
-                <TabsContent value="overview" className="p-0 border-0">
-                  <CardContent className="pt-4">
-                    <div className="flex flex-col space-y-3">
-                      {/* Current metrics */}
-                      <div className="grid grid-cols-3 gap-2 text-sm mb-2">
-                        <div className="p-2 bg-muted/50 rounded-md">
-                          <div className="text-xs text-muted-foreground">Trust</div>
-                          <div className="text-lg font-semibold">{gameMetrics.communityTrust[district]}%</div>
-                        </div>
-                        <div className="p-2 bg-muted/50 rounded-md">
-                          <div className="text-xs text-muted-foreground">Crime</div>
-                          <div className="text-lg font-semibold">{gameMetrics.crimesReported[district]}</div>
-                        </div>
-                        <div className="p-2 bg-muted/50 rounded-md">
-                          <div className="text-xs text-muted-foreground">False Arrests</div>
-                          <div className="text-lg font-semibold">{gameMetrics.falseArrestRate[district]}%</div>
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-1.5">
-                            <Users className="h-4 w-4" />
-                            <span className="text-sm font-medium">Population:</span>
-                          </div>
-                          <span className="font-medium">{gameMetrics.population[district].toLocaleString()}</span>
-                        </div>
-                      </div>
-                      
-                      {/* Police allocation */}
-                      <div className="mt-2">
-                        <div className="flex justify-between items-center mb-2">
-                          <h3 className="text-sm font-medium">Police Allocation</h3>
-                          <div className="flex items-center gap-1">
-                            <span className="text-xs font-medium">{totalPolice} officers</span>
-                            {totalPolice > 7 && (
-                              <Badge variant="destructive" className="text-[10px] px-1.5 py-0">Over-policed</Badge>
-                            )}
-                            {totalPolice < 3 && (
-                              <Badge variant="outline" className="text-[10px] px-1.5 py-0">Under-policed</Badge>
-                            )}
-                          </div>
-                        </div>
-                        
-                        {/* Day Shift */}
-                        <div className="space-y-2">
-                          <div className="flex justify-between items-center">
-                            <label htmlFor={`${district}-day`} className="text-sm">Day Shift:</label>
-                            <div className="flex space-x-2 items-center">
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="h-6 w-6 p-0"
-                                onClick={() => {
-                                  if (policeAllocation[district].day > 1) {
-                                    handlePoliceAllocation(district, "day", policeAllocation[district].day - 1)
-                                  }
-                                }}
-                                disabled={policeAllocation[district].day <= 1}
-                              >
-                                -
-                              </Button>
-                              <span className="w-6 text-center">{policeAllocation[district].day}</span>
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="h-6 w-6 p-0"
-                                onClick={() => handlePoliceAllocation(district, "day", policeAllocation[district].day + 1)}
-                                disabled={policeAllocation.unallocated <= 0}
-                              >
-                                +
-                              </Button>
-                            </div>
-                          </div>
-                          
-                          {/* Night Shift */}
-                          <div className="flex justify-between items-center">
-                            <label htmlFor={`${district}-night`} className="text-sm">Night Shift:</label>
-                            <div className="flex space-x-2 items-center">
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="h-6 w-6 p-0"
-                                onClick={() => {
-                                  if (policeAllocation[district].night > 1) {
-                                    handlePoliceAllocation(district, "night", policeAllocation[district].night - 1)
-                                  }
-                                }}
-                                disabled={policeAllocation[district].night <= 1}
-                              >
-                                -
-                              </Button>
-                              <span className="w-6 text-center">{policeAllocation[district].night}</span>
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="h-6 w-6 p-0"
-                                onClick={() => handlePoliceAllocation(district, "night", policeAllocation[district].night + 1)}
-                                disabled={policeAllocation.unallocated <= 0}
-                              >
-                                +
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Implemented Actions */}
-                      {districtImplementedActions.length > 0 && (
-                        <div className="mt-2">
-                          <h3 className="text-sm font-medium mb-1">Implemented Actions:</h3>
-                          <div className="flex flex-wrap gap-1.5">
-                            {districtImplementedActions.map((actionId, idx) => (
-                              <Badge key={idx} variant="secondary">{getShortActionName(actionId)}</Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      
-                      {/* Selected Action */}
-                      {districtActions[district] && (
-                        <div className="mt-2 p-2 bg-primary/10 rounded-md flex items-center">
-                          <CheckCircle2 className="h-4 w-4 text-primary mr-2" />
-                          <span className="text-sm">Action selected for this round: <span className="font-medium">{getShortActionName(districtActions[district])}</span></span>
-                        </div>
-                      )}
+
+              <CardContent className="p-3 grid grid-cols-2 gap-3">
+                {/* Left column: metrics and police allocation */}
+                <div className="space-y-2">
+                  {/* Metrics at the top */}
+                  <div className="grid grid-cols-3 gap-1.5 text-xs mb-2">
+                    <div className={`p-1.5 rounded flex flex-col items-center ${getTrustColor(gameMetrics.communityTrust[district])}`}>
+                      <span>Trust</span>
+                      <span className="font-bold text-sm">{gameMetrics.communityTrust[district]}%</span>
                     </div>
-                  </CardContent>
-                </TabsContent>
-                
-                {/* Details Tab - Shows demographic information */}
-                <TabsContent value="details" className="p-0 border-0">
-                  <CardContent className="pt-4">
-                    <div className="flex flex-col space-y-4">
-                      {/* Common crimes section */}
+                    <div className={`p-1.5 rounded flex flex-col items-center ${getCrimeColor(gameMetrics.crimesReported[district])}`}>
+                      <span>Crime</span>
+                      <span className="font-bold text-sm">{gameMetrics.crimesReported[district]}</span>
+                    </div>
+                    <div className={`p-1.5 rounded flex flex-col items-center ${getFalseArrestColor(gameMetrics.falseArrestRate[district])}`}>
+                      <span>False</span>
+                      <span className="font-bold text-sm">{gameMetrics.falseArrestRate[district]}%</span>
+                    </div>
+                  </div>
+                  
+                  {/* Police allocation controls */}
+                  <div className="bg-muted/40 p-2 rounded space-y-2">
+                    <div className="flex justify-between items-center mb-1">
+                      <h4 className="text-xs font-medium flex items-center">
+                        <Shield className="h-3.5 w-3.5 mr-1" />
+                        Police: {totalPolice} officers
+                      </h4>
                       <div>
-                        <div className="flex items-center gap-1.5 mb-1">
-                          <h3 className="font-medium text-sm">Common Crimes</h3>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                                <HelpCircle className="h-3.5 w-3.5" />
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-80 p-2 text-sm">
-                              <p>Most frequent types of crime in this district.</p>
-                            </PopoverContent>
-                          </Popover>
+                        {totalPolice > 7 && (
+                          <Badge variant="destructive" className="text-[10px] px-1.5 py-0">Over-policed</Badge>
+                        )}
+                        {totalPolice < 3 && (
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">Under-policed</Badge>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Day shift with sun icon */}
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center">
+                        <Sun className="h-3 w-3 mr-1 text-amber-500" />
+                        <label className="text-xs">Day Shift:</label>
+                      </div>
+                      <div className="flex space-x-1 items-center">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="h-5 w-5 p-0 text-xs"
+                          onClick={() => {
+                            if (policeAllocation[district].day > 1) {
+                              handlePoliceAllocation(district, "day", policeAllocation[district].day - 1)
+                            }
+                          }}
+                          disabled={policeAllocation[district].day <= 1}
+                        >
+                          -
+                        </Button>
+                        <span className="w-4 text-center text-xs">{policeAllocation[district].day}</span>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="h-5 w-5 p-0 text-xs"
+                          onClick={() => handlePoliceAllocation(district, "day", policeAllocation[district].day + 1)}
+                          disabled={policeAllocation.unallocated <= 0}
+                        >
+                          +
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    {/* Night shift with moon icon */}
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center">
+                        <Moon className="h-3 w-3 mr-1 text-indigo-400" />
+                        <label className="text-xs">Night Shift:</label>
+                      </div>
+                      <div className="flex space-x-1 items-center">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="h-5 w-5 p-0 text-xs"
+                          onClick={() => {
+                            if (policeAllocation[district].night > 1) {
+                              handlePoliceAllocation(district, "night", policeAllocation[district].night - 1)
+                            }
+                          }}
+                          disabled={policeAllocation[district].night <= 1}
+                        >
+                          -
+                        </Button>
+                        <span className="w-4 text-center text-xs">{policeAllocation[district].night}</span>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="h-5 w-5 p-0 text-xs"
+                          onClick={() => handlePoliceAllocation(district, "night", policeAllocation[district].night + 1)}
+                          disabled={policeAllocation.unallocated <= 0}
+                        >
+                          +
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    {/* Shift effectiveness info */}
+                    <div className="pt-1 text-[10px] text-muted-foreground italic">
+                      <Popover>
+                        <PopoverTrigger className="underline cursor-help">Shift effectiveness info</PopoverTrigger>
+                        <PopoverContent side="bottom" className="p-2 text-xs w-60">
+                          {getShiftEffectivenessInfo(district)}
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                  </div>
+
+                  {/* Common crimes */}
+                  <div className="text-xs">
+                    <h4 className="font-medium mb-0.5">Common Crimes:</h4>
+                    <div className="flex flex-wrap gap-1">
+                      {gameMetrics.commonCrimes[district].map((crime, index) => (
+                        <Badge key={index} variant="outline" className="text-[10px] py-0">{crime}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Right column: demographics and actions */}
+                <div className="space-y-2">
+                  {/* Population with users icon */}
+                  <div className="flex items-center justify-between text-xs mb-1">
+                    <div className="flex items-center">
+                      <Users className="h-3.5 w-3.5 mr-1" />
+                      <span className="font-medium">Population:</span>
+                    </div>
+                    <span className="font-bold">{gameMetrics.population[district].toLocaleString()}</span>
+                  </div>
+                  
+                  {/* Demographics with pie charts - Adjusted to make pie charts larger */}
+                  <div className="space-y-1">
+                    <h5 className="text-xs font-medium">Demographics</h5>
+                    <div className="grid grid-cols-2 gap-2 bg-muted/30 p-2 rounded">
+                      {/* Ethnicity pie chart - Using larger chart */}
+                      <div>
+                        <h6 className="text-[10px] mb-0.5 text-center">Ethnicity</h6>
+                        <div className="flex justify-center">
+                          <PieChart 
+                            data={demographics.ethnicity} 
+                            size={60} // Increased size from 50 to 60
+                          />
                         </div>
-                        <div className="flex flex-wrap gap-1">
-                          {gameMetrics.commonCrimes[district].map((crime, index) => (
-                            <Badge key={index} variant="outline">{crime}</Badge>
+                        <div className="grid grid-cols-2 gap-x-1 mt-1">
+                          {Object.entries(demographics.ethnicity).map(([key, value]) => (
+                            <div key={key} className="flex items-center text-[9px]">
+                              <div 
+                                className="w-1.5 h-1.5 rounded-full mr-0.5"
+                                style={{ 
+                                  backgroundColor: key === 'white' ? '#60a5fa' : 
+                                                  key === 'black' ? '#4ade80' :
+                                                  key === 'hispanic' ? '#facc15' : '#c084fc'
+                                }}
+                              />
+                              <span>{key.charAt(0).toUpperCase() + key.slice(1)}: {value}%</span>
+                            </div>
                           ))}
                         </div>
                       </div>
                       
-                      {/* Demographics section */}
+                      {/* Income pie chart - Using larger chart */}
                       <div>
-                        <h3 className="font-medium text-sm mb-2">Demographics</h3>
-                        <div className="grid grid-cols-2 gap-4">
-                          {/* Ethnicity breakdown */}
-                          <div>
-                            <h4 className="text-xs text-muted-foreground mb-1">Ethnicity</h4>
-                            <div className="grid grid-cols-2 gap-0.5 text-sm">
-                              <div className="bg-muted/50 p-1.5 rounded-sm flex justify-between">
-                                <span>White</span>
-                                <span className="font-medium">{demographics.ethnicity.white}%</span>
-                              </div>
-                              <div className="bg-muted/50 p-1.5 rounded-sm flex justify-between">
-                                <span>Black</span>
-                                <span className="font-medium">{demographics.ethnicity.black}%</span>
-                              </div>
-                              <div className="bg-muted/50 p-1.5 rounded-sm flex justify-between">
-                                <span>Hispanic</span>
-                                <span className="font-medium">{demographics.ethnicity.hispanic}%</span>
-                              </div>
-                              <div className="bg-muted/50 p-1.5 rounded-sm flex justify-between">
-                                <span>Other</span>
-                                <span className="font-medium">{demographics.ethnicity.other}%</span>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          {/* Income breakdown */}
-                          <div>
-                            <h4 className="text-xs text-muted-foreground mb-1">Income Level</h4>
-                            <div className="grid grid-cols-1 gap-0.5 text-sm">
-                              <div className="bg-muted/50 p-1.5 rounded-sm flex justify-between">
-                                <span>High Income</span>
-                                <span className="font-medium">{demographics.income.high}%</span>
-                              </div>
-                              <div className="bg-muted/50 p-1.5 rounded-sm flex justify-between">
-                                <span>Middle Income</span>
-                                <span className="font-medium">{demographics.income.middle}%</span>
-                              </div>
-                              <div className="bg-muted/50 p-1.5 rounded-sm flex justify-between">
-                                <span>Low Income</span>
-                                <span className="font-medium">{demographics.income.low}%</span>
-                              </div>
-                            </div>
-                          </div>
+                        <h6 className="text-[10px] mb-0.5 text-center">Income</h6>
+                        <div className="flex justify-center">
+                          <PieChart 
+                            data={demographics.income} 
+                            size={60} // Increased size from 50 to 60
+                          />
                         </div>
-                      </div>
-                      
-                      {/* Arrests by Race */}
-                      <div>
-                        <h3 className="font-medium text-sm mb-1">Arrests by Race</h3>
-                        <div className="grid grid-cols-4 gap-1 text-xs">
-                          <div className="bg-muted/50 p-1.5 rounded-sm text-center">
-                            <div>White</div>
-                            <div className="font-medium text-sm">{gameMetrics.arrestsByRace.white[district]}%</div>
-                          </div>
-                          <div className="bg-muted/50 p-1.5 rounded-sm text-center">
-                            <div>Black</div>
-                            <div className="font-medium text-sm">{gameMetrics.arrestsByRace.black[district]}%</div>
-                          </div>
-                          <div className="bg-muted/50 p-1.5 rounded-sm text-center">
-                            <div>Hispanic</div>
-                            <div className="font-medium text-sm">{gameMetrics.arrestsByRace.hispanic[district]}%</div>
-                          </div>
-                          <div className="bg-muted/50 p-1.5 rounded-sm text-center">
-                            <div>Other</div>
-                            <div className="font-medium text-sm">{gameMetrics.arrestsByRace.other[district]}%</div>
-                          </div>
+                        <div className="grid grid-cols-1 gap-x-1 mt-1">
+                          {Object.entries(demographics.income).map(([key, value]) => (
+                            <div key={key} className="flex items-center text-[9px]">
+                              <div 
+                                className="w-1.5 h-1.5 rounded-full mr-0.5"
+                                style={{ 
+                                  backgroundColor: key === 'high' ? '#34d399' : 
+                                                  key === 'middle' ? '#fbbf24' : '#f87171'
+                                }}
+                              />
+                              <span>{key.charAt(0).toUpperCase() + key.slice(1)}: {value}%</span>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     </div>
-                  </CardContent>
-                </TabsContent>
-              </Tabs>
+                  </div>
+                  
+                  {/* Implemented actions - Fixed badge hover styles with !important */}
+                  <div className="text-xs">
+                    <h5 className="font-medium">Implemented Actions:</h5>
+                    {districtImplementedActions.length > 0 ? (
+                      <div className="flex flex-wrap gap-1 mt-0.5">
+                        {districtImplementedActions.map((actionId, idx) => (
+                          <Badge 
+                            key={idx}
+                            className={`${getActionBadgeColor(actionId)} text-[10px]`}
+                            style={{ 
+                              // Use !important to override hover styles completely
+                              backgroundColor: actionId === "cctv" ? "var(--blue-100) !important" : 
+                                             actionId === "app" ? "var(--green-100) !important" :
+                                             actionId === "education" ? "var(--amber-100) !important" : 
+                                             actionId === "drone" ? "var(--purple-100) !important" :
+                                             actionId === "facial" ? "var(--rose-100) !important" : "var(--gray-100) !important",
+                              color: actionId === "cctv" ? "var(--blue-800) !important" : 
+                                    actionId === "app" ? "var(--green-800) !important" :
+                                    actionId === "education" ? "var(--amber-800) !important" : 
+                                    actionId === "drone" ? "var(--purple-800) !important" :
+                                    actionId === "facial" ? "var(--rose-800) !important" : "var(--gray-800) !important",
+                              opacity: "1 !important"
+                            }}
+                          >
+                            {getShortActionName(actionId)}
+                          </Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-[10px] text-muted-foreground italic">No actions implemented yet</p>
+                    )}
+                  </div>
+                  
+                  {/* Selected action for this round - showing CheckCircle2 icon */}
+                  {districtActions[district] && (
+                    <div className="bg-primary/10 p-1.5 rounded-md flex items-center">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-primary mr-1" />
+                      <span className="text-[10px]">
+                        <span className="font-medium">{actions.find(a => a.id === districtActions[district])?.title}</span> selected for this round
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
             </Card>
           );
         })}
       </div>
       
-      {/* Action dialogs and other UI elements remain unchanged */}
+      {/* Action Selection Dialog */}
+      <Dialog open={showActionDialog} onOpenChange={setShowActionDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Select Action for {selectedDistrict && getDistrictName(selectedDistrict)}</DialogTitle>
+            <DialogDescription>
+              Choose an action to implement in this district for the current round. 
+              You can select up to {availableActionPoints} actions per round ({remainingActionPoints} remaining).
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-3">
+            <div className="space-y-3">
+              {actions.map((action) => {
+                // Only check if this specific action is already implemented in this specific district
+                const isAlreadyImplemented = selectedDistrict && implementedActions[selectedDistrict]?.includes(action.id);
+                const isFacialRecWithoutCCTV = action.id === "facial" && 
+                  selectedDistrict && !implementedActions[selectedDistrict]?.includes("cctv");
+                
+                return (
+                  <div 
+                    key={action.id}
+                    className={`flex items-center space-x-3 p-2 rounded border ${
+                      selectedAction === action.id ? "border-primary bg-primary/5" : "border-border"
+                    } ${
+                      isAlreadyImplemented || isFacialRecWithoutCCTV ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                    }`}
+                    onClick={() => {
+                      if (!isAlreadyImplemented && !isFacialRecWithoutCCTV) {
+                        setSelectedAction(action.id);
+                      }
+                    }}
+                  >
+                    <div className="text-2xl">{action.emoji}</div>
+                    <div className="flex-1">
+                      <div className="font-medium text-sm flex items-center gap-2">
+                        {action.title}
+                        {isAlreadyImplemented && <Badge variant="secondary" className="text-xs">Already Implemented</Badge>}
+                        {isFacialRecWithoutCCTV && <Badge variant="outline" className="text-xs">Requires CCTV First</Badge>}
+                      </div>
+                      <div className="text-xs text-muted-foreground">{action.description}</div>
+                    </div>
+                    <div className="text-xs font-medium">
+                      Cost: ${action.cost}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowActionDialog(false)}>Cancel</Button>
+            <Button 
+              disabled={!selectedAction || (selectedDistrict && implementedActions[selectedDistrict]?.includes(selectedAction))}
+              onClick={confirmAction}
+            >
+              Confirm Selection
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
