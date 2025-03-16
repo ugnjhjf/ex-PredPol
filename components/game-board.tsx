@@ -28,7 +28,7 @@ import {
   PopoverTrigger 
 } from "@/components/ui/popover"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import CityMap from "./city-map"
+import CityMap from "./decisions"
 import ActionSelection from "./action-selection"
 import OverallMetrics from "./overall-metrics"
 import GameLog from "./game-log"

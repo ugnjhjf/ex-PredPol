@@ -356,22 +356,22 @@ export default function ActionSelection({
                     setSelectedAction(districtActions[district] || "")
                   }}
                 >
-                  {/* District Header with Title and Metrics */}
-                  <CardHeader className={`py-1 px-2 ${selectedDistrict === district ? districtHeaderColors[district] : ""}`}>
+                  {/* District Header with Title and Metrics - Reduced padding */}
+                  <CardHeader className={`py-0.5 px-2 ${selectedDistrict === district ? districtHeaderColors[district] : ""}`}>
                     <div className="flex justify-between items-center">
-                      <CardTitle className="text-sm flex items-center gap-1.5">
-                        <span className="text-lg">{districtEmojis[district]}</span>
+                      <CardTitle className="text-xs flex items-center gap-1">
+                        <span className="text-base">{districtEmojis[district]}</span>
                         {getDistrictName(district)}
                       </CardTitle>
                       
-                      {/* Metrics badges */}
-                      <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                      {/* Metrics badges - Moved to same line as title to save space */}
+                      <div className="flex items-center gap-1 flex-wrap justify-end">
                         {/* Trust metric */}
                         <Popover>
                           <PopoverTrigger asChild>
                             <Badge 
                               variant="outline" 
-                              className={`px-1.5 py-0.5 text-xs ${getTrustColor(gameMetrics.communityTrust[district])} cursor-help`}
+                              className={`px-1 py-0 text-[10px] ${getTrustColor(gameMetrics.communityTrust[district])} cursor-help`}
                             >
                               Trust: {gameMetrics.communityTrust[district]}%
                             </Badge>
@@ -386,7 +386,7 @@ export default function ActionSelection({
                           <PopoverTrigger asChild>
                             <Badge 
                               variant="outline" 
-                              className={`px-1.5 py-0.5 text-xs ${getCrimeColor(gameMetrics.crimesReported[district])} cursor-help`}
+                              className={`px-1 py-0 text-[10px] ${getCrimeColor(gameMetrics.crimesReported[district])} cursor-help`}
                             >
                               Crimes: {gameMetrics.crimesReported[district]}
                             </Badge>
@@ -401,7 +401,7 @@ export default function ActionSelection({
                           <PopoverTrigger asChild>
                             <Badge 
                               variant="outline" 
-                              className={`px-1.5 py-0.5 text-xs ${getFalseArrestColor(gameMetrics.falseArrestRate[district])} cursor-help`}
+                              className={`px-1 py-0 text-[10px] ${getFalseArrestColor(gameMetrics.falseArrestRate[district])} cursor-help`}
                             >
                               F.A.: {gameMetrics.falseArrestRate[district]}%
                             </Badge>
@@ -412,7 +412,7 @@ export default function ActionSelection({
                         </Popover>
                       </div>
                     </div>
-                    <CardDescription className="text-xs font-medium">
+                    <CardDescription className="text-[10px] font-medium">
                       {district === "district1" && "High income, primarily white population"}
                       {district === "district2" && "Mixed income, diverse population"}
                       {district === "district3" && "Low income, primarily minority population"}
@@ -420,12 +420,12 @@ export default function ActionSelection({
                     </CardDescription>
                   </CardHeader>
 
-                  <CardContent className="p-2">
+                  <CardContent className="p-1">
                     {/* Add population with change indicator */}
-                    <div className="mb-2">
+                    <div className="mb-1">
                       <div className="flex items-center justify-between">
-                        <div className="text-xs flex items-center gap-1">
-                          <Users size={12} />
+                        <div className="text-[10px] flex items-center gap-1">
+                          <Users size={10} />
                           <span className="font-medium">Population:</span> 
                           <span>{gameMetrics.population[district].toLocaleString()}</span>
                         </div>
@@ -433,73 +433,75 @@ export default function ActionSelection({
                     </div>
                     
                     <div className="text-left flex-1">
-                      {/* Charts section */}
-                      <div className="grid grid-cols-2 gap-3">
+                      {/* Charts section - Optimized for space */}
+                      <div className="grid grid-cols-2 gap-1">
                         {/* Ethnicity Pie Chart */}
-                        <div className="flex gap-2 items-center">
+                        <div className="flex gap-1 items-center">
                           <div className="flex flex-col">
-                            <span className="text-xs font-medium">Ethnicity</span>
-                            <div className="text-[10px] space-y-0.5 mt-1">
+                            <span className="text-[10px] font-medium">Ethnicity</span>
+                            <div className="text-[8px] space-y-0 mt-0.5">
                               <div className="flex items-center">
-                                <span className="inline-block w-2 h-2 bg-blue-400 mr-1"></span>
+                                <span className="inline-block w-1.5 h-1.5 bg-blue-400 mr-0.5"></span>
                                 <span>White</span>
                               </div>
                               <div className="flex items-center">
-                                <span className="inline-block w-2 h-2 bg-green-400 mr-1"></span>
+                                <span className="inline-block w-1.5 h-1.5 bg-green-400 mr-0.5"></span>
                                 <span>Black</span>
                               </div>
                               <div className="flex items-center">
-                                <span className="inline-block w-2 h-2 bg-yellow-400 mr-1"></span>
+                                <span className="inline-block w-1.5 h-1.5 bg-yellow-400 mr-0.5"></span>
                                 <span>Hispanic</span>
                               </div>
                               <div className="flex items-center">
-                                <span className="inline-block w-2 h-2 bg-purple-400 mr-1"></span>
+                                <span className="inline-block w-1.5 h-1.5 bg-purple-400 mr-0.5"></span>
                                 <span>Other</span>
                               </div>
                             </div>
                           </div>
+                          {/* Smaller pie chart */}
                           <PieChart 
                             data={demographics.ethnicity} 
                             colorMap={['#60a5fa', '#4ade80', '#facc15', '#c084fc']}
-                            size={85}
+                            size={65}
                           />
                         </div>
                         
                         {/* Income Pie Chart */}
-                        <div className="flex gap-2 items-center">
+                        <div className="flex gap-1 items-center">
                           <div className="flex flex-col">
-                            <span className="text-xs font-medium">Income</span>
-                            <div className="text-[10px] space-y-0.5 mt-1">
+                            <span className="text-[10px] font-medium">Income</span>
+                            <div className="text-[8px] space-y-0 mt-0.5">
                               <div className="flex items-center">
-                                <span className="inline-block w-2 h-2 bg-emerald-400 mr-1"></span>
+                                <span className="inline-block w-1.5 h-1.5 bg-emerald-400 mr-0.5"></span>
                                 <span>High</span>
                               </div>
                               <div className="flex items-center">
-                                <span className="inline-block w-2 h-2 bg-amber-400 mr-1"></span>
+                                <span className="inline-block w-1.5 h-1.5 bg-amber-400 mr-0.5"></span>
                                 <span>Middle</span>
                               </div>
                               <div className="flex items-center">
-                                <span className="inline-block w-2 h-2 bg-red-400 mr-1"></span>
+                                <span className="inline-block w-1.5 h-1.5 bg-red-400 mr-0.5"></span>
                                 <span>Low</span>
                               </div>
                             </div>
                           </div>
+                          {/* Smaller pie chart */}
                           <PieChart 
                             data={demographics.income} 
                             colorMap={['#34d399', '#fbbf24', '#f87171']}
-                            size={85}
+                            size={65}
                           />
                         </div>
                       </div>
 
-                      {/* Common crimes section */}
-                      <div className="mt-3">
+                      {/* Common crimes section - More compact */}
+                      <div className="mt-1">
                         <div className="flex items-center">
-                          <h4 className="text-xs font-medium mb-1">Common Crimes:</h4>
+                          <h4 className="text-[10px] font-medium">Common Crimes:</h4>
                           <Popover>
                             <PopoverTrigger asChild>
-                              <Button variant="ghost" className="h-4 w-4 p-0 ml-1 text-muted-foreground cursor-help">
-                                <HelpCircleIcon className="h-3 w-3" />
+                              <Button variant="ghost" className="h-3 w-3 p-0 ml-1 text-muted-foreground cursor-help">
+                                <HelpCircleIcon className="h-2.5 w-2.5" />
                               </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-80 p-2 text-xs">
@@ -507,22 +509,22 @@ export default function ActionSelection({
                             </PopoverContent>
                           </Popover>
                         </div>
-                        <div className="flex flex-wrap gap-1">
+                        <div className="flex flex-wrap gap-0.5">
                           {gameMetrics.commonCrimes[district].map((crime, index) => (
-                            <span key={index} className="text-[10px] bg-muted px-1.5 py-0.5 rounded">
+                            <span key={index} className="text-[8px] bg-muted px-1 py-0 rounded">
                               {crime}
                             </span>
                           ))}
                         </div>
                       </div>
 
-                      {/* Implemented actions */}
+                      {/* Implemented actions - More compact */}
                       {districtImplementedActions.length > 0 && (
-                        <div className="mt-3">
-                          <p className="text-xs font-medium mb-1">Implemented Actions:</p>
-                          <div className="flex flex-wrap gap-1">
+                        <div className="mt-1">
+                          <p className="text-[10px] font-medium mb-0.5">Implemented Actions:</p>
+                          <div className="flex flex-wrap gap-0.5">
                             {districtImplementedActions.map((actionId, idx) => (
-                              <Badge key={idx} variant="secondary" className="text-[10px] px-1.5 py-0">
+                              <Badge key={idx} variant="secondary" className="text-[8px] px-1 py-0">
                                 {getShortActionName(actionId)}
                               </Badge>
                             ))}
@@ -531,8 +533,8 @@ export default function ActionSelection({
                       )}
 
                       {districtActions[district] ? (
-                        <span className="inline-block mt-3 text-[10px] bg-primary/20 px-2 py-0.5 rounded-full">
-                          <CheckCircle2 className="h-3 w-3 inline mr-1 text-primary" />
+                        <span className="inline-block mt-1 text-[8px] bg-primary/20 px-1.5 py-0 rounded-full">
+                          <CheckCircle2 className="h-2.5 w-2.5 inline mr-0.5 text-primary" />
                           Action selected
                         </span>
                       ) : null}

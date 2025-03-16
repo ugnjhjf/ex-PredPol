@@ -960,7 +960,7 @@ export default function GameSimulation() {
     }
   }
 
-  // Enhanced checkForSpecialEvents function that triggers earlier for bad metrics
+  // Enhanced checkForSpecialEvents function with updated criteria and explanations
   const checkForSpecialEvents = (metrics, allocation, changes) => {
     const triggeredEvents = [];
     
@@ -971,19 +971,24 @@ export default function GameSimulation() {
     
     // Core events that can occur from round 2 onwards
     
-    // 1. Over-policing protests (updated to trigger earlier)
-    if (allocation.district3.day + allocation.district3.night > 7 && 
-        metrics.communityTrust.district3 < 25) {
-      triggeredEvents.push({
-        type: "negative",
-        title: "Over-policing Protests",
-        message: "Protests erupt over aggressive policing in South Side minority neighborhoods",
-        district: "district3",
-        trustEffect: -15,
-        budgetEffect: -200,
-        populationEffect: -1000,
-        round: currentRound
-      });
+    // 1. Over-policing protests - UPDATED: Changed criteria to police > 7 and simplified explanation
+    for (const district of ["district1", "district2", "district3", "district4"]) {
+      // Check if district has more than 7 officers total (day + night)
+      if (allocation[district].day + allocation[district].night > 7 && 
+          metrics.communityTrust[district] < 30) {
+        triggeredEvents.push({
+          type: "negative",
+          title: "Citizens Protest Against Over-Policing",
+          message: `Residents in ${getDistrictName(district)} are protesting against excessive police presence in their community, claiming it creates a hostile environment.`,
+          district: district,
+          trustEffect: -12,
+          budgetEffect: -180,
+          populationEffect: -800,
+          round: currentRound
+        });
+        // Only trigger one over-policing protest per round
+        break;
+      }
     }
     
     // 2. Community boycott - MOVED EARLIER to round 2
@@ -1012,7 +1017,7 @@ export default function GameSimulation() {
         triggeredEvents.push({
           type: "population-exodus",
           title: "Population Departure",
-          message: `Rising crime and falling trust cause the middle class to leave Eastside. ${getDistrictName(district)}`,
+          message: `Rising crime and falling trust cause the middle class to leave ${getDistrictName(district)}.`,
           district: district,
           trustEffect: -5,
           budgetEffect: -150,
@@ -1024,9 +1029,30 @@ export default function GameSimulation() {
       }
     }
     
+    // NEW EVENT: High false arrest rate scandal
+    for (const district of ["district1", "district2", "district3", "district4"]) {
+      if (metrics.falseArrestRate[district] > 28 && 
+          !gameLog.some(entry => 
+            entry.specialEvents?.some(e => 
+              e.type === "false-arrest-scandal" && e.district === district))) {
+        triggeredEvents.push({
+          type: "false-arrest-scandal",
+          title: "False Arrest Scandal",
+          message: `A high-profile innocent individual was wrongfully arrested in ${getDistrictName(district)}, causing public outrage and media scrutiny.`,
+          district: district,
+          trustEffect: -15,
+          budgetEffect: -220,
+          crimeEffect: 5,
+          round: currentRound
+        });
+        // Only trigger one false arrest scandal per round
+        break;
+      }
+    }
+    
     // Enhanced events that only occur after round 3
     if (currentRound > 3) {
-      // New event: Civil rights investigation for persistent racial disparities
+      // Civil rights investigation - criteria unchanged
       const district3FalseArrestRate = metrics.falseArrestRate.district3;
       const district1FalseArrestRate = metrics.falseArrestRate.district1;
       
@@ -1044,10 +1070,7 @@ export default function GameSimulation() {
         });
       }
 
-      // Middle class exodus due to public safety concerns - moved to earlier rounds
-      // Health impacts from over-policing - keep in later rounds
-      // Violent riot from extreme mistrust - keep in later rounds
-      // ... other advanced events ...
+      // ...other advanced events...
     }
     
     // Additional early warning events for round 2
