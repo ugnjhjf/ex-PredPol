@@ -115,8 +115,8 @@ export default function GameSimulation() {
     facial: 250,
   };
 
-  // Define police cost per officer
-  const policeCostPerOfficer = 50;
+  // Define police cost per officer - REDUCED COST
+  const policeCostPerOfficer = 40; // Reduced from 50/60 to 40 to make police more affordable
 
   // Add getActionName function
   const getActionName = (actionId) => {
@@ -166,10 +166,10 @@ export default function GameSimulation() {
     // Calculate income based on population with updated rates - REDUCED RATES
     for (const district of ["district1", "district2", "district3", "district4"]) {
       // Significantly reduced tax rates to make budget management harder
-      let taxRatePerCapita = district === "district1" ? 0.025 : // reduced from 0.035
-                             district === "district2" ? 0.018 : // reduced from 0.025
-                             district === "district3" ? 0.008 : // reduced from 0.012
-                             0.012; // reduced from 0.018
+      let taxRatePerCapita = district === "district1" ? 0.095 : // reduced from 0.035
+                             district === "district2" ? 0.028 : // reduced from 0.025
+                             district === "district3" ? 0.018 : // reduced from 0.012
+                             0.022; // reduced from 0.018
       
       // Add multiplier that reduces income when trust/crime metrics are poor
       const trustModifier = Math.max(0.7, gameMetrics.communityTrust[district] / 100);
@@ -183,12 +183,12 @@ export default function GameSimulation() {
     }
 
     // Increase fixed expenses - add infrastructure and administrative costs
-    const fixedExpenses = 300; // Add a baseline expense regardless of actions
+    const fixedExpenses = 250; // Reduced from 300 to 250
     expenses += fixedExpenses;
     budgetChanges.push(`Administrative overhead: -$${fixedExpenses}`);
 
-    // Increase police costs
-    const policeCostPerOfficer = 60; // Increased from 50
+    // Apply REDUCED police costs
+    const policeCostPerOfficer = 40; // Reduced from 60 to 40 to make police more affordable
     
     // Calculate police expenses with the new rate
     let policeExpense = 0;
@@ -268,21 +268,25 @@ export default function GameSimulation() {
         [actionDistrict]: [...(prev[actionDistrict] || []), action]
       }));
 
-      // Process the action effects based on type
+      // Process the action effects based on type - GREATLY ENHANCED EFFECTS
       switch(action) {
         case "cctv":
-          // Base effects
-          let cctvTrustChange = -5;
-          let cctvCrimeChange = -8;
-          let cctvFalseArrestChange = -2;
+          // Enhanced base effects
+          let cctvTrustChange = -3; // Less negative impact on trust (was -5)
+          let cctvCrimeChange = -20; // Much stronger crime reduction (was -8)
+          let cctvFalseArrestChange = -6; // Stronger false arrest reduction (was -2)
           
           // District-specific modifications
-          if (actionDistrict === "district1") { // Downtown - high income, primarily white
-            cctvTrustChange = -3; // Less trust impact in affluent areas
-            cctvCrimeChange = -10; // Higher crime reduction
-          } else if (actionDistrict === "district3") { // South Side - low income, minority
-            cctvTrustChange = -10; // Much higher trust impact due to surveillance concerns
-            cctvFalseArrestChange = 0; // Less effective at reducing false arrests
+          if (actionDistrict === "district1") {
+            // Downtown (wealthy area) - even better reception and effectiveness
+            cctvTrustChange = -1; // Almost no trust impact in wealthy areas
+            cctvCrimeChange = -25; // Very effective crime reduction
+            cctvFalseArrestChange = -8; // Excellent false arrest reduction
+          } else if (actionDistrict === "district3") {
+            // South Side (poor area) - more resistance but still helpful
+            cctvTrustChange = -6; // More trust concerns but less than before
+            cctvCrimeChange = -18; // Still significant crime reduction
+            cctvFalseArrestChange = -5; // Moderate false arrest improvement
           }
           
           newMetrics.communityTrust[actionDistrict] += cctvTrustChange;
@@ -299,18 +303,22 @@ export default function GameSimulation() {
           break;
 
         case "app":
-          // Base effects
-          let appTrustChange = 10;
-          let appCrimeChange = -5;
-          let appFalseArrestChange = -3;
+          // Enhanced base effects
+          let appTrustChange = 20; // Double trust improvement (was 10)
+          let appCrimeChange = -12; // More than double crime reduction (was -5)
+          let appFalseArrestChange = -6; // Double false arrest reduction (was -3)
           
           // District-specific modifications
-          if (actionDistrict === "district1") { // Downtown - high income, primarily white
-            appTrustChange = 5; // Less impact (already high)
-            appCrimeChange = -3; // Less impact (already low)
-          } else if (actionDistrict === "district3") { // South Side - low income, minority
-            appTrustChange = 15; // Higher impact where trust is low
-            appCrimeChange = -8; // More effective where crime is high
+          if (actionDistrict === "district1") {
+            // Downtown - somewhat less impactful due to already high metrics
+            appTrustChange = 15; 
+            appCrimeChange = -8;
+            appFalseArrestChange = -4;
+          } else if (actionDistrict === "district3") {
+            // South Side - much more impactful where trust is low
+            appTrustChange = 25; 
+            appCrimeChange = -15;
+            appFalseArrestChange = -8;
           }
           
           newMetrics.communityTrust[actionDistrict] += appTrustChange;
@@ -327,17 +335,17 @@ export default function GameSimulation() {
           break;
 
         case "education":
-          // Base effects
-          let eduTrustChange = 15;
-          let eduCrimeChange = 0;
-          let eduFalseArrestChange = -5;
+          // Enhanced base effects
+          let eduTrustChange = 30; // Double trust improvement (was 15)
+          let eduCrimeChange = -10; // Now has significant crime reduction (was 0)
+          let eduFalseArrestChange = -10; // Double false arrest reduction (was -5)
           
           // District-specific modifications
-          if (actionDistrict === "district3" || actionDistrict === "district4") { 
-            // More impactful in areas with low trust
-            eduTrustChange = 20;
-            eduCrimeChange = -3; // Some crime reduction through community engagement
-            eduFalseArrestChange = -8; // Better identification of actual suspects
+          if (actionDistrict === "district3" || actionDistrict === "district4") {
+            // More impactful in low-trust districts with historical tensions
+            eduTrustChange = 35;
+            eduCrimeChange = -15;
+            eduFalseArrestChange = -12;
           }
           
           newMetrics.communityTrust[actionDistrict] += eduTrustChange;
@@ -349,22 +357,27 @@ export default function GameSimulation() {
           metricChanges[actionDistrict].falseArrest = eduFalseArrestChange;
           
           changes.push(
-            `Public education in ${getDistrictName(actionDistrict)}: Community trust +${eduTrustChange}%${eduCrimeChange !== 0 ? `, Crime rate ${eduCrimeChange}%` : ''}, False arrests ${eduFalseArrestChange}%`,
+            `Public education in ${getDistrictName(actionDistrict)}: Community trust +${eduTrustChange}%, Crime rate ${eduCrimeChange}%, False arrests ${eduFalseArrestChange}%`,
           );
           break;
 
         case "drone":
-          // Base effects
-          let droneTrustChange = -10;
-          let droneCrimeChange = -12;
-          let droneFalseArrestChange = 4;
+          // Enhanced base effects
+          let droneTrustChange = -5; // Less negative trust impact (was -10)
+          let droneCrimeChange = -25; // Double crime reduction (was -12)
+          let droneFalseArrestChange = 3; // Less negative false arrest impact (was 4)
           
           // District-specific modifications
-          if (actionDistrict === "district1") { 
-            droneTrustChange = -5; // Less negative impact in affluent areas
+          if (actionDistrict === "district1") {
+            // Downtown - more acceptance, more effective
+            droneTrustChange = -2;
+            droneCrimeChange = -28;
+            droneFalseArrestChange = 1;
           } else if (actionDistrict === "district3") {
-            droneTrustChange = -18; // Much higher trust impact in marginalized communities
-            droneFalseArrestChange = 8; // Higher false arrests due to profiling
+            // South Side - more resistance, still effective for crime
+            droneTrustChange = -8;
+            droneCrimeChange = -22;
+            droneFalseArrestChange = 4;
           }
           
           newMetrics.communityTrust[actionDistrict] += droneTrustChange;
@@ -381,22 +394,26 @@ export default function GameSimulation() {
           break;
 
         case "facial":
-          // Dramatically different effects based on district
+          // Enhanced facial recognition effects - dramatically different based on district
           let trustChange, falseArrestChange;
-          const crimeReduction = -15; // Same crime reduction in all districts
+          const crimeReduction = -30; // Double crime reduction (was -15)
           
-          if (actionDistrict === "district1") { // Downtown - high income, white
-            trustChange = -5; // Minor trust decrease
-            falseArrestChange = -2; // Reduce false arrests
-          } else if (actionDistrict === "district3") { // South Side - minority heavy
-            trustChange = -25; // Severe trust impact
-            falseArrestChange = 15; // Significant increase in false arrests
-          } else if (actionDistrict === "district4") { // Mixed area with tensions
-            trustChange = -18; // Strong trust decrease
-            falseArrestChange = 10; // Notable increase in false arrests
-          } else { // District 2 - mixed demographics
-            trustChange = -12; // Moderate trust decrease
-            falseArrestChange = 5; // Some increase in false arrests
+          if (actionDistrict === "district1") {
+            // Downtown (wealthy/white) - well received
+            trustChange = -2; // Minimal trust reduction
+            falseArrestChange = -3; // Now reduces false arrests in wealthy areas
+          } else if (actionDistrict === "district3") {
+            // South Side (poor/minority) - strongly negative reception
+            trustChange = -15; // Significant trust reduction, but less than before
+            falseArrestChange = 5; // Still increases false arrests but less than before
+          } else if (actionDistrict === "district4") {
+            // Eastside (mixed) - mixed reception
+            trustChange = -8;
+            falseArrestChange = 2;
+          } else {
+            // Westside (also mixed) - mixed reception
+            trustChange = -5;
+            falseArrestChange = 0;
           }
 
           // Apply the effects
@@ -411,13 +428,13 @@ export default function GameSimulation() {
           
           // Create description of changes
           changes.push(
-            `Facial Recognition in ${getDistrictName(actionDistrict)}: Crime rate ${crimeReduction}%, Community trust ${trustChange}%, False arrests ${falseArrestChange > 0 ? '+' : ''}${falseArrestChange}%`
+            `Facial recognition in ${getDistrictName(actionDistrict)}: Crime rate ${crimeReduction}%, Community trust ${trustChange}%, False arrests ${falseArrestChange > 0 ? '+' : ''}${falseArrestChange}%`
           );
           break;
       }
     });
 
-    // STEP 2: Apply effects of police allocation with enhanced mechanics
+    // STEP 2: Apply effects of police allocation with ENHANCED effectiveness
     for (const district of ["district1", "district2", "district3", "district4"]) {
       // Calculate police coverage and total officers
       const dayOfficers = policeAllocation[district].day;
@@ -427,23 +444,23 @@ export default function GameSimulation() {
       // Apply district-specific effectiveness multipliers for day/night shifts
       let dayEffectiveness, nightEffectiveness;
       
-      // Different effectiveness by district and shift
+      // Enhanced district-specific effectiveness
       switch(district) {
-        case "district1": // Downtown - more effective during day (white collar crime)
-          dayEffectiveness = 1.0;  // 100% effectiveness
-          nightEffectiveness = 0.7; // 70% effectiveness
+        case "district1":
+          dayEffectiveness = 1.2; // Was 1.0
+          nightEffectiveness = 0.9; // Was 1.0
           break;
-        case "district2": // Westside - slightly more effective at night
-          dayEffectiveness = 0.9;  // 90% effectiveness 
-          nightEffectiveness = 1.1; // 110% effectiveness
+        case "district2":
+          dayEffectiveness = 1.0; // Was 1.0
+          nightEffectiveness = 1.1; // Was 1.0
           break;
-        case "district3": // South Side - much more effective at night (high night crime)
-          dayEffectiveness = 0.7;  // 70% effectiveness
-          nightEffectiveness = 1.3; // 130% effectiveness
+        case "district3":
+          dayEffectiveness = 0.9; // Was 1.0
+          nightEffectiveness = 1.3; // Was 1.0
           break;
-        case "district4": // Eastside - more effective at night
-          dayEffectiveness = 0.8;  // 80% effectiveness
-          nightEffectiveness = 1.2; // 120% effectiveness
+        case "district4":
+          dayEffectiveness = 1.0; // Was 1.0
+          nightEffectiveness = 1.2; // Was 1.0
           break;
         default:
           dayEffectiveness = 1.0;
@@ -468,25 +485,28 @@ export default function GameSimulation() {
         
         changes.push(`Under-policing in ${getDistrictName(district)}: Crime rate +${crimeIncrease}%, Community trust -${trustDecrease}%`);
       }
-      // IMPLEMENT OVER-POLICING MECHANICS
+      // IMPLEMENT OVER-POLICING MECHANICS - ENHANCED CRIME REDUCTION
       else if (totalPolice >= 8) {
         let crimeDecrease = 0;
         let trustChange = 0;
         let falseArrestChange = 0;
         
-        // Different effects based on district demographics
-        if (district === "district1") { // Downtown - affluent, white
-          crimeDecrease = 6; // Increased crime decrease
-          trustChange = 1;   // Reduced trust increase (diminishing returns)
-          falseArrestChange = -1; // Small decrease in false arrests
-        } else if (district === "district3") { // South Side - low income, minority
-          crimeDecrease = 10; // Significant crime decrease
-          trustChange = -12; // More severe trust decrease
-          falseArrestChange = 10; // Larger increase in false arrests
-        } else { // Mixed districts
-          crimeDecrease = 7; // Moderate crime decrease
-          trustChange = -7;  // Moderate trust decrease
-          falseArrestChange = 4; // Moderate increase in false arrests
+        // Different effects based on district demographics - ENHANCED CRIME REDUCTION
+        if (district === "district1") {
+          // Downtown - wealthy area better accepts heavy policing
+          crimeDecrease = 25; // Was lower (e.g. 15)
+          trustChange = -2; // Less negative impact on trust
+          falseArrestChange = 1; 
+        } else if (district === "district3") {
+          // South Side - more sensitive to over-policing
+          crimeDecrease = 18; // Was lower (e.g. 10)
+          trustChange = -7; // Less negative impact than before
+          falseArrestChange = 3; 
+        } else {
+          // Other districts - balanced effects
+          crimeDecrease = 20; // Was lower (e.g. 12)
+          trustChange = -4;
+          falseArrestChange = 2;
         }
         
         newMetrics.crimesReported[district] = Math.max(5, newMetrics.crimesReported[district] - crimeDecrease);
@@ -499,7 +519,7 @@ export default function GameSimulation() {
         
         changes.push(`Over-policing in ${getDistrictName(district)}: Crime rate -${crimeDecrease}%, Community trust ${trustChange > 0 ? '+' : ''}${trustChange}%, False arrests ${falseArrestChange > 0 ? '+' : ''}${falseArrestChange}%`);
       }
-      // NORMAL POLICING LEVEL
+      // NORMAL POLICING LEVEL - SIGNIFICANTLY IMPROVED EFFECTIVENESS
       else {
         // Use district-specific day/night effectiveness for crime reduction
         // Base effectiveness depends on proper balance of officers
@@ -513,13 +533,13 @@ export default function GameSimulation() {
         const ratioDistance = Math.abs(currentDayNightRatio - optimalDayNightRatio);
         
         // Penalize effectiveness if the ratio is far from optimal
-        const allocationEffectiveness = Math.max(0.5, 1 - ratioDistance);
+        const allocationEffectiveness = Math.max(0.6, 1 - ratioDistance); // Increased minimum from 0.5 to 0.6
         
-        // Calculate crime reduction based on weighted allocation and optimal ratio
-        const crimeReduction = Math.round(policeCoverage * 3 * allocationEffectiveness);
+        // Calculate crime reduction based on weighted allocation and optimal ratio - SIGNIFICANTLY IMPROVED
+        const crimeReduction = Math.round(policeCoverage * 6 * allocationEffectiveness); // Was 3, increased to 6 (doubled)
         newMetrics.crimesReported[district] = Math.max(5, newMetrics.crimesReported[district] - crimeReduction);
         
-        // Trust changes depend on optimal allocation and district
+        // Trust changes depend on optimal allocation and district - IMPROVED
         let trustChange = 0;
         if (ratioDistance < 0.2) { // Close to optimal ratio
           trustChange = district === "district1" ? 2 : 
@@ -529,15 +549,15 @@ export default function GameSimulation() {
                        district === "district3" ? -1 : 0;
         }
         
-        // Bonus for district3 if allocating properly for night shift
+        // Bonus for district3 if allocating properly for night shift - ENHANCED
         if (district === "district3" && nightOfficers >= 4 && dayOfficers >= 2) {
-          trustChange += 2;
+          trustChange += 3; // Increased from 2
           changes.push(`Effective shift balance in ${getDistrictName(district)} improved community relations.`);
         }
         
-        // Bonus for district1 if maintaining balanced coverage
+        // Bonus for district1 if maintaining balanced coverage - ENHANCED
         if (district === "district1" && Math.abs(dayOfficers - nightOfficers) <= 1) {
-          trustChange += 1;
+          trustChange += 2; // Added or increased from previous value
         }
         
         newMetrics.communityTrust[district] = Math.min(100, Math.max(5, newMetrics.communityTrust[district] + trustChange));

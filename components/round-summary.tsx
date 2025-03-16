@@ -267,28 +267,7 @@ export function RoundSummary({ currentRound, gameMetrics, policeAllocation, roun
                           </div>
                         </div>
 
-                        {/* Trust - with progress bar */}
-                        <div className="space-y-0.5">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs">Trust</span>
-                            <div className="flex items-center gap-1">
-                              <span className="text-xs font-medium">
-                                {gameMetrics.communityTrust[district]}%
-                              </span>
-                              {roundSummary.metricChanges?.[district]?.trust !== undefined && 
-                               roundSummary.metricChanges?.[district]?.trust !== 0 && (
-                                <Badge 
-                                  variant={roundSummary.metricChanges[district].trust > 0 ? "success" : "destructive"}
-                                  className="px-1 h-4 text-[10px]"
-                                >
-                                  {roundSummary.metricChanges[district].trust > 0 ? '+' : ''}
-                                  {roundSummary.metricChanges[district].trust}%
-                                </Badge>
-                              )}
-                            </div>
- 
-                          </div>
-                        </div>
+                        
                       </div>
                       
                       {/* Police Allocation Column */}

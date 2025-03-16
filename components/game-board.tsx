@@ -468,16 +468,9 @@ export default function GameBoard({
             onClick={() => setActiveTab("map")}
           >
             <span className="mr-2">🗺️</span>
-            Districts
+            Decisions
           </Button>
-          <Button 
-            variant={activeTab === "actions" ? "secondary" : "ghost"} 
-            className={`justify-start ${activeTab === "actions" ? "bg-amber-100 text-amber-800 hover:bg-amber-200 dark:bg-amber-800 dark:text-amber-100 dark:hover:bg-amber-700" : ""}`}
-            onClick={() => setActiveTab("actions")}
-          >
-            <span className="mr-2">⚙️</span>
-            Actions
-          </Button>
+
           <Button 
             variant={activeTab === "performance" ? "secondary" : "ghost"} 
             className={`justify-start ${activeTab === "performance" ? "bg-purple-100 text-purple-800 hover:bg-purple-200 dark:bg-purple-800 dark:text-purple-100 dark:hover:bg-purple-700" : ""}`}
