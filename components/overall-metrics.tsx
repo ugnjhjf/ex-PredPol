@@ -280,54 +280,7 @@ export default function OverallMetrics({ gameMetrics, currentRound }) {
             </div>
           </div>
         </div>
-        
-        {/* Add Progress Bars for Key Metrics */}
-        <div className="grid grid-cols-3 mt-4 gap-6">
-          <div>
-            <div className="flex justify-between items-center mb-1">
-              <span className="text-xs">Community Trust</span>
-              <span className={`text-xs ${getTrustColor(avgTrust)}`}>
-                {avgTrust.toFixed(1)}%
-              </span>
-            </div>
-            <Progress value={avgTrust} className="h-1.5" 
-              indicatorClassName={`
-                ${avgTrust >= 70 ? 'bg-green-500' : 
-                  avgTrust >= 40 ? 'bg-yellow-500' : 'bg-red-500'}
-              `}
-            />
-          </div>
-          
-          <div>
-            <div className="flex justify-between items-center mb-1">
-              <span className="text-xs">Crime Rate</span>
-              <span className={`text-xs ${getCrimeColor(avgCrime)}`}>
-                {avgCrime.toFixed(1)}%
-              </span>
-            </div>
-            <Progress value={100 - avgCrime} className="h-1.5"
-              indicatorClassName={`
-                ${avgCrime <= 30 ? 'bg-green-500' : 
-                  avgCrime <= 60 ? 'bg-yellow-500' : 'bg-red-500'}
-              `}
-            />
-          </div>
-          
-          <div>
-            <div className="flex justify-between items-center mb-1">
-              <span className="text-xs">False Arrest Rate</span>
-              <span className={`text-xs ${getFalseArrestColor(avgFalseArrest)}`}>
-                {avgFalseArrest.toFixed(1)}%
-              </span>
-            </div>
-            <Progress value={100 - (avgFalseArrest * 2)} className="h-1.5"
-              indicatorClassName={`
-                ${avgFalseArrest <= 10 ? 'bg-green-500' : 
-                  avgFalseArrest <= 20 ? 'bg-yellow-500' : 'bg-red-500'}
-              `}
-            />
-          </div>
-        </div>
+  
       </CardContent>
     </Card>
   )

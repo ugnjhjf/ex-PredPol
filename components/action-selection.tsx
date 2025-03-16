@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogFooter, 
   AlertDialogHeader, AlertDialogTitle, AlertDialogDescription } from "@/components/ui/alert-dialog"
-import { InfoIcon, HelpCircleIcon, XIcon } from "lucide-react"
+import { InfoIcon, HelpCircleIcon, XIcon, Users, CircleDollarSign, CheckCircle2, Clock } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Toast, ToastAction, ToastDescription, ToastProvider, ToastTitle, ToastViewport } from "@/components/ui/toast"
 import { useToast } from "@/components/ui/use-toast"
@@ -333,40 +333,36 @@ export default function ActionSelection({
   }
 
   return (
-    <div className="p-5 space-y-6">
-      <div className="flex flex-col md:flex-row gap-6">
+    <div className="p-3 space-y-4">
+      <div className="flex flex-col md:flex-row gap-3">
         {/* Districts on the left */}
         <div className="md:w-3/4">
-          <h3 className="text-lg font-medium mb-3">Select District</h3>
-          <div className="grid grid-cols-2 gap-5">
+          <h3 className="text-sm font-semibold mb-2">Select District</h3>
+          <div className="grid grid-cols-2 gap-3">
             {["district1", "district2", "district3", "district4"].map((district) => {
               const demographics = getDistrictDemographics(district)
               const districtImplementedActions = implementedActions[district] || []
 
               return (
-                <div
+                <Card
                   key={district}
-                  className={`rounded-lg border-2 transition-all cursor-pointer ${
+                  className={`overflow-hidden border ${
                     selectedDistrict === district
-                      ? `ring-2 ring-offset-2 ring-offset-background ring-primary ${districtBgColors[district]}`
-                      : "bg-muted hover:bg-muted/80"
-                  }`}
+                      ? `ring-2 ring-offset-2 ring-offset-background ring-primary ${districtColors[district]}`
+                      : "bg-muted/30 hover:bg-muted/50"
+                  } cursor-pointer`}
                   onClick={() => {
                     setSelectedDistrict(district)
                     setSelectedAction(districtActions[district] || "")
                   }}
                 >
                   {/* District Header with Title and Metrics */}
-                  <div className={`p-3 ${selectedDistrict === district ? districtHeaderColors[district] : ""}`}>
+                  <CardHeader className={`py-1 px-2 ${selectedDistrict === district ? districtHeaderColors[district] : ""}`}>
                     <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        <div
-                          className={`w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center text-white bg-gradient-to-br ${districtColors[district]}`}
-                        >
-                          <span className="text-xl">{districtEmojis[district]}</span>
-                        </div>
-                        <h3 className="font-bold text-base">{getDistrictName(district)}</h3>
-                      </div>
+                      <CardTitle className="text-sm flex items-center gap-1.5">
+                        <span className="text-lg">{districtEmojis[district]}</span>
+                        {getDistrictName(district)}
+                      </CardTitle>
                       
                       {/* Metrics badges */}
                       <div className="flex items-center gap-1.5 flex-wrap justify-end">
@@ -383,7 +379,7 @@ export default function ActionSelection({
                               <InfoIcon className="h-3.5 w-3.5 ml-0.5 text-muted-foreground cursor-pointer" />
                             </PopoverTrigger>
                             <PopoverContent className="w-64 p-2">
-                              <p className="text-sm">
+                              <p className="text-xs">
                                 How much the community trusts the police. Higher trust leads to better cooperation.
                               </p>
                             </PopoverContent>
@@ -403,7 +399,7 @@ export default function ActionSelection({
                               <InfoIcon className="h-3.5 w-3.5 ml-0.5 text-muted-foreground cursor-pointer" />
                             </PopoverTrigger>
                             <PopoverContent className="w-64 p-2">
-                              <p className="text-sm">
+                              <p className="text-xs">
                                 Number of crimes reported in the district. Lower is better.
                               </p>
                             </PopoverContent>
@@ -416,104 +412,117 @@ export default function ActionSelection({
                             variant="outline" 
                             className={`px-1.5 py-0.5 text-xs ${getFalseArrestColor(gameMetrics.falseArrestRate[district])}`}
                           >
-                            False Arrests.: {gameMetrics.falseArrestRate[district]}%
+                            F.A.: {gameMetrics.falseArrestRate[district]}%
                           </Badge>
                           <Popover>
                             <PopoverTrigger>
                               <InfoIcon className="h-3.5 w-3.5 ml-0.5 text-muted-foreground cursor-pointer" />
                             </PopoverTrigger>
                             <PopoverContent className="w-64 p-2">
-                              <p className="text-sm">
-                                False Arrest Rate - percentage of arrests involving innocent individuals. Lower values indicate more accurate policing.
+                              <p className="text-xs">
+                                False Arrest Rate - percentage of arrests involving innocent individuals.
                               </p>
                             </PopoverContent>
                           </Popover>
                         </div>
                       </div>
                     </div>
-                  </div>
+                    <CardDescription className="text-xs font-medium">
+                      {district === "district1" && "High income, primarily white population"}
+                      {district === "district2" && "Mixed income, diverse population"}
+                      {district === "district3" && "Low income, primarily minority population"}
+                      {district === "district4" && "Mixed demographic with historical tensions"}
+                    </CardDescription>
+                  </CardHeader>
 
-                  <div className="p-4">
+                  <CardContent className="p-2">
+                    {/* Add population with change indicator */}
+                    <div className="mb-2">
+                      <div className="flex items-center justify-between">
+                        <div className="text-xs flex items-center gap-1">
+                          <Users size={12} />
+                          <span className="font-medium">Population:</span> 
+                          <span>{gameMetrics.population[district].toLocaleString()}</span>
+                        </div>
+                      </div>
+                    </div>
+                    
                     <div className="text-left flex-1">
-                      {/* Remove the District metrics bar chart section */}
-                      
                       {/* Charts section */}
-                      <div className="mt-1">
-                        <div className="grid grid-cols-2 gap-4">
-                          {/* Ethnicity Pie Chart */}
-                          <div className="flex gap-2 items-center">
-                            <div className="flex flex-col">
-                              <span className="text-sm font-medium">Ethnicity</span>
-                              <div className="text-xs space-y-0.5 mt-1">
-                                <div className="flex items-center">
-                                  <span className="inline-block w-2.5 h-2.5 bg-blue-400 mr-1"></span>
-                                  <span>White</span>
-                                </div>
-                                <div className="flex items-center">
-                                  <span className="inline-block w-2.5 h-2.5 bg-green-400 mr-1"></span>
-                                  <span>Black</span>
-                                </div>
-                                <div className="flex items-center">
-                                  <span className="inline-block w-2.5 h-2.5 bg-yellow-400 mr-1"></span>
-                                  <span>Hispanic</span>
-                                </div>
-                                <div className="flex items-center">
-                                  <span className="inline-block w-2.5 h-2.5 bg-purple-400 mr-1"></span>
-                                  <span>Other</span>
-                                </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        {/* Ethnicity Pie Chart */}
+                        <div className="flex gap-2 items-center">
+                          <div className="flex flex-col">
+                            <span className="text-xs font-medium">Ethnicity</span>
+                            <div className="text-[10px] space-y-0.5 mt-1">
+                              <div className="flex items-center">
+                                <span className="inline-block w-2 h-2 bg-blue-400 mr-1"></span>
+                                <span>White</span>
+                              </div>
+                              <div className="flex items-center">
+                                <span className="inline-block w-2 h-2 bg-green-400 mr-1"></span>
+                                <span>Black</span>
+                              </div>
+                              <div className="flex items-center">
+                                <span className="inline-block w-2 h-2 bg-yellow-400 mr-1"></span>
+                                <span>Hispanic</span>
+                              </div>
+                              <div className="flex items-center">
+                                <span className="inline-block w-2 h-2 bg-purple-400 mr-1"></span>
+                                <span>Other</span>
                               </div>
                             </div>
-                            <PieChart 
-                              data={demographics.ethnicity} 
-                              colorMap={['#60a5fa', '#4ade80', '#facc15', '#c084fc']}
-                              size={95}
-                            />
                           </div>
-                          
-                          {/* Income Pie Chart */}
-                          <div className="flex gap-2 items-center">
-                            <div className="flex flex-col">
-                              <span className="text-sm font-medium">Income</span>
-                              <div className="text-xs space-y-0.5 mt-1">
-                                <div className="flex items-center">
-                                  <span className="inline-block w-2.5 h-2.5 bg-emerald-400 mr-1"></span>
-                                  <span>High</span>
-                                </div>
-                                <div className="flex items-center">
-                                  <span className="inline-block w-2.5 h-2.5 bg-amber-400 mr-1"></span>
-                                  <span>Middle</span>
-                                </div>
-                                <div className="flex items-center">
-                                  <span className="inline-block w-2.5 h-2.5 bg-red-400 mr-1"></span>
-                                  <span>Low</span>
-                                </div>
+                          <PieChart 
+                            data={demographics.ethnicity} 
+                            colorMap={['#60a5fa', '#4ade80', '#facc15', '#c084fc']}
+                            size={85}
+                          />
+                        </div>
+                        
+                        {/* Income Pie Chart */}
+                        <div className="flex gap-2 items-center">
+                          <div className="flex flex-col">
+                            <span className="text-xs font-medium">Income</span>
+                            <div className="text-[10px] space-y-0.5 mt-1">
+                              <div className="flex items-center">
+                                <span className="inline-block w-2 h-2 bg-emerald-400 mr-1"></span>
+                                <span>High</span>
+                              </div>
+                              <div className="flex items-center">
+                                <span className="inline-block w-2 h-2 bg-amber-400 mr-1"></span>
+                                <span>Middle</span>
+                              </div>
+                              <div className="flex items-center">
+                                <span className="inline-block w-2 h-2 bg-red-400 mr-1"></span>
+                                <span>Low</span>
                               </div>
                             </div>
-                            <PieChart 
-                              data={demographics.income} 
-                              colorMap={['#34d399', '#fbbf24', '#f87171']}
-                              size={95}
-                            />
                           </div>
+                          <PieChart 
+                            data={demographics.income} 
+                            colorMap={['#34d399', '#fbbf24', '#f87171']}
+                            size={85}
+                          />
                         </div>
                       </div>
 
                       {/* Common crimes section */}
                       <div className="mt-3">
-                        <div className="flex items-center text-sm font-medium mb-1">
+                        <div className="flex items-center">
+                          <h4 className="text-xs font-medium mb-1">Common Crimes:</h4>
                           <Popover>
                             <PopoverTrigger>
-                              <InfoIcon className="h-3.5 w-3.5 text-muted-foreground cursor-pointer mr-1.5" />
+                              <InfoIcon className="h-3 w-3 ml-1 text-muted-foreground cursor-pointer" />
                             </PopoverTrigger>
                             <PopoverContent className="w-80 p-2">
-                              <p className="text-sm">Most frequent types of crime in this district.</p>
+                              <p className="text-xs">Most frequent types of crime in this district.</p>
                             </PopoverContent>
                           </Popover>
-                          <h4>Common Crimes:</h4>
                         </div>
-                        <div className="flex flex-wrap gap-1.5">
+                        <div className="flex flex-wrap gap-1">
                           {gameMetrics.commonCrimes[district].map((crime, index) => (
-                            <span key={index} className="text-xs bg-muted px-2 py-0.5 rounded">
+                            <span key={index} className="text-[10px] bg-muted px-1.5 py-0.5 rounded">
                               {crime}
                             </span>
                           ))}
@@ -523,10 +532,10 @@ export default function ActionSelection({
                       {/* Implemented actions */}
                       {districtImplementedActions.length > 0 && (
                         <div className="mt-3">
-                          <p className="text-sm font-medium text-muted-foreground">Implemented Actions:</p>
-                          <div className="flex flex-wrap gap-1.5 mt-1">
+                          <p className="text-xs font-medium mb-1">Implemented Actions:</p>
+                          <div className="flex flex-wrap gap-1">
                             {districtImplementedActions.map((actionId, idx) => (
-                              <Badge key={idx} variant="secondary" className="text-xs px-1.5 py-0">
+                              <Badge key={idx} variant="secondary" className="text-[10px] px-1.5 py-0">
                                 {getShortActionName(actionId)}
                               </Badge>
                             ))}
@@ -535,13 +544,14 @@ export default function ActionSelection({
                       )}
 
                       {districtActions[district] ? (
-                        <span className="inline-block mt-3 text-xs bg-primary/20 px-2.5 py-1 rounded-full">
+                        <span className="inline-block mt-3 text-[10px] bg-primary/20 px-2 py-0.5 rounded-full">
+                          <CheckCircle2 className="h-3 w-3 inline mr-1 text-primary" />
                           Action selected
                         </span>
                       ) : null}
                     </div>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
               )
             })}
           </div>

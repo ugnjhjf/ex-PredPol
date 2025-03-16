@@ -4,7 +4,7 @@ import { useState, useEffect } from "react" // Add useEffect
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { InfoIcon, TrendingUp, TrendingDown, Minus, AlertCircle, ChevronDown, ChevronRight, AlertTriangle } from "lucide-react"
+import { InfoIcon, TrendingUp, TrendingDown, Minus, AlertCircle, ChevronDown, ChevronRight, AlertTriangle, RefreshCcw, Clock, SendHorizonal, CircleDollarSign } from "lucide-react"
 import {
   AlertDialog,
   AlertDialogContent,
@@ -148,12 +148,14 @@ export default function GameBoard({
       <div className="flex justify-between items-center mb-4">
         {/* Move Round badge to the left */}
         <div className="flex items-center gap-4">
-          <Badge variant="outline" className="text-lg px-3 py-1">
+          <Badge variant="outline" className="text-lg px-3 py-1 flex items-center gap-1.5">
+            <Clock className="h-5 w-5" />
             Round: {currentRound}/10
           </Badge>
           
           {/* Add budget badge */}
-          <Badge variant="outline" className={`text-lg px-3 py-1 ${gameMetrics.budget < 200 ? 'bg-red-50 text-red-700' : ''}`}>
+          <Badge variant="outline" className={`text-lg px-3 py-1 flex items-center gap-1.5 ${gameMetrics.budget < 200 ? 'bg-red-50 text-red-700' : ''}`}>
+            <CircleDollarSign className="h-5 w-5" />
             Budget: ${gameMetrics.budget}
           </Badge>
         </div>
@@ -235,11 +237,13 @@ export default function GameBoard({
             </DialogContent>
           </Dialog>
           {/* Add restart button */}
-          <Button variant="outline" onClick={handleRestartClick}>
+          <Button variant="outline" onClick={handleRestartClick} className="flex items-center gap-1.5">
+            <RefreshCcw className="h-4 w-4" />
             Restart
           </Button>
           {/* Fixed End Round button - Remove the disabled attribute entirely */}
-          <Button onClick={handleNextRound}>
+          <Button onClick={handleNextRound} className="flex items-center gap-1.5">
+            <SendHorizonal className="h-4 w-4" />
             End Round
           </Button>
         </div>
@@ -373,7 +377,8 @@ export default function GameBoard({
             <Button variant="outline" onClick={() => setShowRestartConfirmDialog(false)}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleConfirmRestart}>
+            <Button variant="destructive" onClick={handleConfirmRestart} className="flex items-center gap-1.5">
+              <RefreshCcw className="h-4 w-4" />
               Restart
             </Button>
           </AlertDialogFooter>
