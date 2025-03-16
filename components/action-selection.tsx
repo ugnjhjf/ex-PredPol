@@ -544,16 +544,16 @@ export default function ActionSelection({
           </div>
         </div>
 
-        {/* Actions on the right */}
+        {/* Actions on the right - updated UI */}
         <div className="md:w-1/4">
           <Card className="sticky top-4">
             <CardHeader className="pb-2 px-3 py-3">
               <div className="flex justify-between items-center">
-                <CardTitle className="text-base">Available Actions</CardTitle>
+                <CardTitle className="text-sm">Available Actions</CardTitle>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-7 w-7">
-                      <HelpCircleIcon className="h-4 w-4" />
+                    <Button variant="ghost" size="icon" className="h-6 w-6">
+                      <HelpCircleIcon className="h-3.5 w-3.5" />
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent side="top" align="end" className="max-w-sm">
@@ -567,18 +567,18 @@ export default function ActionSelection({
               <CardDescription className="text-xs">Select an action for {getDistrictName(selectedDistrict)}</CardDescription>
             </CardHeader>
             <CardContent className="px-3 py-2">
-              <RadioGroup value={selectedAction} onValueChange={setSelectedAction} className="space-y-2">
+              <RadioGroup value={selectedAction} onValueChange={setSelectedAction} className="space-y-1.5">
                 {actions.map((action) => {
                   const isImplemented = implementedActions[selectedDistrict]?.includes(action.id)
-                  
-                  // Check if facial recognition requires CCTV prerequisite
                   const isFacialRecWithoutCCTV = action.id === "facial" && 
                     !implementedActions[selectedDistrict]?.includes("cctv")
                   
                   return (
                     <div 
                       key={action.id} 
-                      className={`flex items-start space-x-2 border rounded-md p-1.5 ${
+                      className={`flex items-start space-x-2 border rounded-md p-1 ${
+                        selectedAction === action.id ? "bg-primary/10 border-primary/30" : ""
+                      } ${
                         isImplemented || isFacialRecWithoutCCTV
                           ? "bg-muted opacity-60 cursor-not-allowed" 
                           : "hover:bg-muted/50"
@@ -593,20 +593,21 @@ export default function ActionSelection({
                       <div className="grid gap-0.5">
                         <div className="flex items-center gap-1">
                           <span className="mr-0.5 text-base">{action.emoji}</span>
-                          <Label htmlFor={action.id} className={`font-medium text-sm ${(isImplemented || isFacialRecWithoutCCTV) ? "text-muted-foreground" : ""}`}>
+                          <Label htmlFor={action.id} className={`font-medium text-xs ${(isImplemented || isFacialRecWithoutCCTV) ? "text-muted-foreground" : ""}`}>
                             {action.title}
                           </Label>
                           {isImplemented && (
-                            <Badge variant="outline" className="text-[9px] px-1 py-0">Implemented</Badge>
+                            <Badge variant="secondary" className="text-[9px] px-1 py-0">Implemented</Badge>
                           )}
                           {isFacialRecWithoutCCTV && (
                             <Badge variant="outline" className="text-[9px] px-1 py-0">Requires CCTV</Badge>
                           )}
                         </div>
-                        <p className="text-[10px] text-muted-foreground leading-tight">{action.description}
-                        <Popover>
+                        <div className="flex items-start">
+                          <p className="text-[10px] text-muted-foreground leading-tight mr-1">{action.description}</p>
+                          <Popover>
                             <PopoverTrigger>
-                              <InfoIcon className="h-3 w-3 text-muted-foreground cursor-pointer flex-shrink-0 mt-0.5" />
+                              <InfoIcon className="h-2.5 w-2.5 text-muted-foreground cursor-pointer flex-shrink-0 mt-0.5" />
                             </PopoverTrigger>
                             <PopoverContent className="w-64 p-2">
                               <p className="text-xs font-medium mb-1">Effects</p>
@@ -620,9 +621,7 @@ export default function ActionSelection({
                               </ul>
                             </PopoverContent>
                           </Popover>
-
-                        </p>
-
+                        </div>
                       </div>
                     </div>
                   );
@@ -633,6 +632,7 @@ export default function ActionSelection({
                 disabled={!selectedAction || implementedActions[selectedDistrict]?.includes(selectedAction)} 
                 className="w-full mt-3"
                 size="sm"
+                variant="secondary"
               >
                 Confirm Action
               </Button>

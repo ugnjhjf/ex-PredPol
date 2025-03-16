@@ -2,377 +2,416 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
-import { TrendingUp, TrendingDown, AlertCircle } from "lucide-react"
+import { TrendingUp, TrendingDown, AlertCircle, ChevronRight, ChevronDown, Clock, Check } from "lucide-react"
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
+
+// District styling variables for consistency with round-summary
+const districtColors = {
+  district1: "bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800",
+  district2: "bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800",
+  district3: "bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800",
+  district4: "bg-purple-50 dark:bg-purple-950 border-purple-200 dark:border-purple-800",
+}
+
+const districtHeaderColors = {
+  district1: "bg-blue-100 dark:bg-blue-900",
+  district2: "bg-green-100 dark:bg-green-900",
+  district3: "bg-amber-100 dark:bg-amber-900",
+  district4: "bg-purple-100 dark:bg-purple-900",
+}
+
+const districtEmojis = {
+  district1: "🏙️",
+  district2: "🏘️",
+  district3: "🏚️",
+  district4: "🏫",
+}
 
 export default function GameLog({ gameLog, getDistrictName, currentRound }) {
+  // Add state to track which rounds are expanded
+  const [expandedRounds, setExpandedRounds] = useState({})
+
+  // Toggle expanded state for a round
+  const toggleRoundExpansion = (round) => {
+    setExpandedRounds(prev => ({
+      ...prev,
+      [round]: !prev[round]
+    }))
+  }
+
+  // Enhanced getActionName function to properly translate action IDs to human-readable names
   const getActionName = (actionType) => {
     const actions = {
       cctv: "CCTV Surveillance",
       app: "Crime Reporting App",
       education: "Public Education",
       drone: "Drone Surveillance",
+      facial: "Facial Recognition"
     }
-    return actions[actionType] || "Unknown Action"
+    return actions[actionType] || actionType;
   }
 
-  const getTrustColor = (trust) => {
-    if (trust >= 70) return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
-    if (trust >= 40) return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100"
-    return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100"
-  }
-
-  const getCrimeColor = (crime) => {
-    if (crime <= 30) return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
-    if (crime <= 60) return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100"
-    return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100"
-  }
-
-  const getFalseArrestColor = (rate) => {
-    if (rate <= 10) return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
-    if (rate <= 20) return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100"
-    return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100"
-  }
-
-  // Add helper function to determine if a change is good or bad
+  // Helper to determine if a change is good or bad
   const isPositiveChange = (metricType, value) => {
     switch(metricType) {
       case 'communityTrust':
         return value > 0;
-      case 'crimesReported': // Changed from crimeRate
+      case 'crimesReported':
         return value < 0;
       case 'falseArrestRate':
         return value < 0;
       default:
         return false;
     }
-  };
-
-  // Add district styling variables
-  const districtColors = {
-    district1: "bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800",
-    district2: "bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800",
-    district3: "bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800",
-    district4: "bg-purple-50 dark:bg-purple-950 border-purple-200 dark:border-purple-800",
   }
 
-  const districtHeaderColors = {
-    district1: "bg-blue-100 dark:bg-blue-900",
-    district2: "bg-green-100 dark:bg-green-900",
-    district3: "bg-amber-100 dark:bg-amber-900",
-    district4: "bg-purple-100 dark:bg-purple-900",
+  // Format change values with sign and styling - using same style as round summary
+  const formatChange = (value, isPositive) => {
+    const displayValue = Math.abs(value)
+    if (value === 0) return null
+    
+    const Icon = isPositive ? TrendingUp : TrendingDown
+    const colorClass = isPositive ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
+    
+    return (
+      <span className={`ml-1 text-xs flex items-center ${colorClass}`}>
+        {value > 0 ? '+' : ''}
+        {value}
+        <Icon className="h-3 w-3 ml-0.5" />
+      </span>
+    )
   }
 
-  const districtEmojis = {
-    district1: "🏙️",
-    district2: "🏘️",
-    district3: "🏚️",
-    district4: "🏫",
+  // No data message if game just started
+  if (gameLog.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center p-8">
+          <h3 className="font-semibold text-xl mb-2">No History Yet</h3>
+          <p className="text-muted-foreground">Complete at least one round to see your decisions and outcomes.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Helpers for color styling - using same style as round summary
+  const getTrustColor = (trust) => {
+    if (trust >= 70) return "text-green-600 dark:text-green-400"
+    if (trust >= 40) return "text-yellow-600 dark:text-yellow-400"
+    return "text-red-600 dark:text-red-400"
+  }
+
+  const getCrimeColor = (crime) => {
+    if (crime <= 30) return "text-green-600 dark:text-green-400"
+    if (crime <= 60) return "text-yellow-600 dark:text-yellow-400"
+    return "text-red-600 dark:text-red-400"
+  }
+
+  const getFalseArrestColor = (rate) => {
+    if (rate <= 10) return "text-green-600 dark:text-green-400"
+    if (rate <= 20) return "text-yellow-600 dark:text-yellow-400"
+    return "text-red-600 dark:text-red-400"
+  }
+
+  // Get bar color for metrics - matching round summary style
+  const getBarColor = (metric, value) => {
+    switch(metric) {
+      case 'trust':
+        return value >= 70 ? "bg-green-500" : value >= 40 ? "bg-yellow-500" : "bg-red-500";
+      case 'crime':
+        return value <= 30 ? "bg-green-500" : value <= 60 ? "bg-yellow-500" : "bg-red-500";
+      case 'falseArrest':
+        return value <= 10 ? "bg-green-500" : value <= 20 ? "bg-yellow-500" : "bg-red-500";
+      default:
+        return "bg-gray-500";
+    }
   }
 
   return (
     <div className="p-4">
       <Card>
-        <CardHeader>
-          <CardTitle>Round History</CardTitle> {/* Changed from "Game History" to "Round History" */}
+        <CardHeader className="py-3 border-b bg-primary/5">
+          <CardTitle className="flex items-center text-sm">
+            <Clock className="mr-2 h-4 w-4" /> 
+            Round History
+          </CardTitle>
         </CardHeader>
-        <CardContent>
-          {gameLog.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No history yet. Complete your first round to see your decisions and outcomes.
-            </div>
-          ) : (
-            <ScrollArea className="h-[calc(80vh-220px)]">
-              <div className="space-y-6 pr-4">
-                {gameLog.map((entry, index) => (
-                  <div key={index} className="border rounded-md p-4">
-                    <div className="flex justify-between items-center mb-4">
-                      <Badge variant="outline" className="px-2 py-1">
+        <CardContent className="pt-3">
+          <ScrollArea className="h-[calc(80vh-220px)]">
+            <div className="space-y-2">
+              {gameLog.map((entry, index) => (
+                <Card 
+                  key={index} 
+                  className={`overflow-hidden border ${currentRound === entry.round + 1 ? 'border-primary/50 shadow-sm' : 'border-border/50'}`}
+                >
+                  {/* Round header with toggle */}
+                  <div 
+                    className={`flex items-center justify-between p-2.5 cursor-pointer hover:bg-muted/50 ${expandedRounds[entry.round] ? 'bg-muted/30' : ''}`}
+                    onClick={() => toggleRoundExpansion(entry.round)}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <Badge variant="outline" className="px-2 py-0.5 text-xs">
                         Round {entry.round}
                       </Badge>
+                      
+                      {/* Show action taken - Fix the display of actions */}
                       {entry.action ? (
-                        <Badge variant="secondary" className="px-2 py-1">
-                          {getActionName(entry.action.type)} in {entry.action.districtName}
-                        </Badge>
+                        Array.isArray(entry.action) ? (
+                          <Badge variant="secondary" className="px-2 py-0.5 text-xs">
+                            {getActionName(entry.action[0].type)} in {entry.action[0].districtName}
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary" className="px-2 py-0.5 text-xs">
+                            {getActionName(entry.action.type)} in {entry.action.districtName}
+                          </Badge>
+                        )
                       ) : (
-                        <Badge variant="outline" className="px-2 py-1 bg-muted">
+                        <Badge variant="outline" className="px-2 py-0.5 text-xs bg-muted">
                           No Action Taken
                         </Badge>
                       )}
                     </div>
-
-                    {/* Show the effects and triggers */}
-                    {entry.changes && entry.changes.length > 0 && (
-                      <div className="mb-4">
-                        <h3 className="font-medium mb-2">Effects & Triggers</h3>
-                        <div className="space-y-1 text-sm bg-muted/30 p-3 rounded-md">
-                          {entry.changes.map((change, idx) => (
-                            <div key={idx} className="flex items-start gap-2">
-                              <div className="mt-0.5">
-                                {change.includes("Crime rate -") || change.includes("Community trust +") || change.includes("False arrests -") ? (
-                                  <TrendingDown className="h-4 w-4 text-green-600" />
-                                ) : change.includes("Crime rate +") || change.includes("Community trust -") || change.includes("False arrests +") ? (
-                                  <TrendingUp className="h-4 w-4 text-red-600" />
-                                ) : (
-                                  <AlertCircle className="h-4 w-4 text-amber-600" />
-                                )}
-                              </div>
-                              <span>{change}</span>
-                            </div>
-                          ))}
-                        </div>
+                    
+                    {/* Budget summary */}
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center text-xs">
+                        <span className="text-muted-foreground">Budget:</span>
+                        <span className="font-medium ml-1">${entry.budget?.current}</span>
+                        <span className={`ml-1 ${entry.budget?.income - entry.budget?.expenses >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                          ({entry.budget?.income - entry.budget?.expenses >= 0 ? '+' : ''}${entry.budget?.income - entry.budget?.expenses})
+                        </span>
                       </div>
-                    )}
-
-                    {/* Add budget section to each entry */}
-                    {entry.budget && (
-                      <div className="mb-4">
-                        <h3 className="font-medium mb-2">Budget Summary</h3>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="bg-muted/30 p-3 rounded-md">
-                            <div className="flex justify-between items-center mb-1.5 text-sm">
-                              <span>Previous Budget:</span>
-                              <span className="font-medium">${entry.budget.previous}</span>
+                      
+                      {/* Toggle icon */}
+                      {expandedRounds[entry.round] ? (
+                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Expanded content */}
+                  {expandedRounds[entry.round] && (
+                    <div className="p-3 pt-0 border-t">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                        {/* Key metrics summary */}
+                        <div className="col-span-1 space-y-3">
+                          {/* Special events if any */}
+                          {entry.specialEvents && entry.specialEvents.length > 0 && (
+                            <div>
+                              <h4 className="text-xs font-medium mb-1.5">Special Events</h4>
+                              <div className="space-y-1.5">
+                                {entry.specialEvents.map((event, idx) => (
+                                  <div 
+                                    key={idx}
+                                    className={`text-xs p-2 rounded ${
+                                      event.type === 'positive' ? 'bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-800 border' :
+                                      'bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800 border'
+                                    }`}
+                                  >
+                                    <div className="font-medium">{event.title}</div>
+                                    <div>{event.message}</div>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
-                            <div className="flex justify-between items-center mb-1.5 text-sm text-green-600">
-                              <span>Income:</span>
-                              <span className="font-medium">+${entry.budget.income}</span>
-                            </div>
-                            <div className="flex justify-between items-center mb-1.5 text-sm text-red-600">
-                              <span>Expenses:</span>
-                              <span className="font-medium">-${entry.budget.expenses}</span>
-                            </div>
-                            <div className="border-t pt-1.5 mt-1.5 flex justify-between items-center text-sm font-semibold">
-                              <span>Current Budget:</span>
-                              <span>${entry.budget.current}</span>
+                          )}
+                          
+                          {/* Budget details - style matching round summary */}
+                          <div>
+                            <h4 className="text-xs font-medium mb-1.5">Budget Details</h4>
+                            <div className="bg-muted/30 p-2 rounded-md text-xs">
+                              <div className="flex justify-between mb-0.5">
+                                <span>Previous Budget:</span>
+                                <span className="font-medium">${entry.budget?.previous}</span>
+                              </div>
+                              <div className="flex justify-between mb-0.5 text-green-600 dark:text-green-400">
+                                <span>Income:</span>
+                                <span>+${entry.budget?.income}</span>
+                              </div>
+                              <div className="flex justify-between mb-0.5 text-red-600 dark:text-red-400">
+                                <span>Expenses:</span>
+                                <span>-${entry.budget?.expenses}</span>
+                              </div>
+                              <div className="flex justify-between pt-1.5 mt-1 border-t font-medium">
+                                <span>Current Budget:</span>
+                                <span>${entry.budget?.current}</span>
+                              </div>
                             </div>
                           </div>
-                          <div className="bg-muted/30 p-3 rounded-md">
-                            <h4 className="text-sm font-medium mb-1.5">Budget Details</h4>
-                            <ul className="space-y-0.5 text-xs">
-                              {entry.budget.details.map((detail, index) => (
-                                <li key={index} className={detail.includes('+') ? 'text-green-600' : 'text-red-600'}>
-                                  {detail}
-                                </li>
+
+                          {/* Police allocation using district styling scheme */}
+                          <div>
+                            <h4 className="text-xs font-medium mb-1.5">Police Allocation</h4>
+                            <div className="grid grid-cols-2 gap-1.5">
+                              {["district1", "district2", "district3", "district4"].map((district) => (
+                                <div key={district} className={`p-1.5 rounded text-xs ${districtColors[district]}`}>
+                                  <div className="font-medium truncate flex items-center">
+                                    <span className="mr-1">{districtEmojis[district]}</span>
+                                    {getDistrictName(district)}
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span>Day: {entry.policeAllocation[district].day}</span>
+                                    <span>Night: {entry.policeAllocation[district].night}</span>
+                                  </div>
+                                </div>
                               ))}
-                            </ul>
+                            </div>
                           </div>
+                        </div>
+                        
+                        {/* District metrics - two-column grid for all districts */}
+                        <div className="col-span-2">
+                          <h4 className="text-xs font-medium mb-1.5">District Metrics</h4>
+                          <div className="grid grid-cols-2 gap-1.5">
+                            {["district1", "district2", "district3", "district4"].map((district) => (
+                              <div key={district} className={`p-2 rounded-md border ${districtColors[district]}`}>
+                                <div className="font-medium text-xs mb-2 flex items-center">
+                                  <span className="text-base mr-1">{districtEmojis[district]}</span>
+                                  {getDistrictName(district)}
+                                </div>
+                                
+                                {/* Metrics in a compact grid matching summary styling */}
+                                <div className="grid grid-cols-2 gap-2 text-[10px]">
+                                  {/* Trust */}
+                                  <div className="space-y-1">
+                                    <div className="flex justify-between items-center">
+                                      <span>Trust:</span>
+                                      <div className="flex items-center">
+                                        <span className={`font-medium ${getTrustColor(entry.metrics.communityTrust[district])}`}>
+                                          {entry.metrics.communityTrust[district]}%
+                                        </span>
+                                        {entry.metricChanges?.communityTrust && 
+                                          formatChange(
+                                            entry.metricChanges.communityTrust[district],
+                                            isPositiveChange('communityTrust', entry.metricChanges.communityTrust[district])
+                                          )
+                                        }
+                                      </div>
+                                    </div>
+                                    <div className="w-full h-1 bg-muted rounded-full overflow-hidden">
+                                      <div 
+                                        className={getBarColor('trust', entry.metrics.communityTrust[district])} 
+                                        style={{ width: `${entry.metrics.communityTrust[district]}%`, height: '100%' }}
+                                      ></div>
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Crime */}
+                                  <div className="space-y-1">
+                                    <div className="flex justify-between items-center">
+                                      <span>Crimes:</span>
+                                      <div className="flex items-center">
+                                        <span className={`font-medium ${getCrimeColor(Math.min(100, entry.metrics.crimesReported[district]/5))}`}>
+                                          {entry.metrics.crimesReported[district]}
+                                        </span>
+                                        {entry.metricChanges?.crimesReported && 
+                                          formatChange(
+                                            entry.metricChanges.crimesReported[district],
+                                            isPositiveChange('crimesReported', entry.metricChanges.crimesReported[district])
+                                          )
+                                        }
+                                      </div>
+                                    </div>
+                                    <div className="w-full h-1 bg-muted rounded-full overflow-hidden">
+                                      <div 
+                                        className={getBarColor('crime', Math.min(100, entry.metrics.crimesReported[district]/5))} 
+                                        style={{ width: `${Math.min(100, entry.metrics.crimesReported[district]/3)}%`, height: '100%' }}
+                                      ></div>
+                                    </div>
+                                  </div>
+                                  
+                                  {/* False Arrests */}
+                                  <div className="space-y-1">
+                                    <div className="flex justify-between items-center">
+                                      <span>False Arrests:</span>
+                                      <div className="flex items-center">
+                                        <span className={`font-medium ${getFalseArrestColor(entry.metrics.falseArrestRate[district])}`}>
+                                          {entry.metrics.falseArrestRate[district]}%
+                                        </span>
+                                        {entry.metricChanges?.falseArrestRate && 
+                                          formatChange(
+                                            entry.metricChanges.falseArrestRate[district],
+                                            isPositiveChange('falseArrestRate', entry.metricChanges.falseArrestRate[district])
+                                          )
+                                        }
+                                      </div>
+                                    </div>
+                                    <div className="w-full h-1 bg-muted rounded-full overflow-hidden">
+                                      <div 
+                                        className={getBarColor('falseArrest', entry.metrics.falseArrestRate[district])} 
+                                        style={{ width: `${entry.metrics.falseArrestRate[district] * 2}%`, height: '100%' }}
+                                      ></div>
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Population */}
+                                  <div>
+                                    <div className="flex justify-between items-center">
+                                      <span>Population:</span>
+                                      <div className="flex items-center">
+                                        <span className="font-medium">{entry.population?.[district]?.toLocaleString()}</span>
+                                        {entry.metricChanges?.[district]?.population && entry.metricChanges[district].population !== 0 && (
+                                          <span className={`text-xs ml-1 ${entry.metricChanges[district].population > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                                            {entry.metricChanges[district].population > 0 ? '+' : ''}
+                                            {entry.metricChanges[district].population.toLocaleString()}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          
+                          {/* Round events/changes - styled like round summary with bullet points */}
+                          {entry.changes && entry.changes.length > 0 && (
+                            <div className="mt-3">
+                              <h4 className="text-xs font-medium mb-1.5">Round Events</h4>
+                              <div className="space-y-1 text-[10px] bg-muted/30 p-2 rounded-md max-h-28 overflow-auto">
+                                {entry.changes.map((change, idx) => (
+                                  <div key={idx} className="flex items-start gap-1.5">
+                                    <span className="text-primary flex-shrink-0 mt-0.5">•</span>
+                                    <span>{change}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
-                    )}
 
-                    <h3 className="font-medium mb-2">Police Allocation</h3>
-                    <div className="grid grid-cols-4 gap-2 mb-4">
-                      {["district1", "district2", "district3", "district4"].map((district) => (
-                        <div key={district} className="bg-muted p-2 rounded text-sm">
-                          <div className="font-medium">{getDistrictName(district)}</div>
-                          <div className="text-xs">
-                            Day: {entry.policeAllocation[district].day} | Night: {entry.policeAllocation[district].night}
-                          </div>
+                      {/* Analyst feedback using blue styling from round summary */}
+                      {entry.feedback && (
+                        <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 p-3 rounded-md text-xs">
+                          <h4 className="font-medium mb-2 text-blue-800 dark:text-blue-300">Analyst Feedback</h4>
+                          <ul className="space-y-1.5">
+                            {entry.feedback.split('. ').filter(item => item.trim()).map((point, idx) => (
+                              <li key={idx} className="flex items-start gap-1.5">
+                                <span className="text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5">•</span>
+                                <span className="text-blue-800 dark:text-blue-300">
+                                  {point.trim()}{!point.endsWith('.') ? '.' : ''}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
                         </div>
-                      ))}
+                      )}
                     </div>
+                  )}
+                </Card>
+              ))}
 
-                    <h3 className="font-medium mb-2">District Metrics</h3>
-                    <div className="grid grid-cols-2 gap-4 mb-4">
-                      {["district1", "district2", "district3", "district4"].map((district) => (
-                        <div key={district} className={`rounded text-sm border-2 ${districtColors[district]} overflow-hidden`}>
-                          <div className={`font-medium p-2 ${districtHeaderColors[district]} flex items-center gap-1.5`}>
-                            <span>{districtEmojis[district]}</span>
-                            <span>{getDistrictName(district)}</span>
-                          </div>
-                          <div className="p-3">
-                            <div className="grid grid-cols-2 gap-4">
-                              {/* Left column: Trust and Crime metrics */}
-                              <div className="space-y-3">
-                                {/* Trust metric with bar */}
-                                <div>
-                                  <div className="flex justify-between items-center mb-1">
-                                    <span className="text-xs font-medium">Trust</span>
-                                    <div className="flex items-center">
-                                      <span className="text-sm font-semibold">{entry.metrics.communityTrust[district]}%</span>
-                                      {entry.metricChanges && entry.metricChanges.communityTrust && (
-                                        <span 
-                                          className={`ml-1 text-xs flex items-center ${
-                                            isPositiveChange('communityTrust', entry.metricChanges.communityTrust[district]) 
-                                              ? "text-green-600 dark:text-green-400" 
-                                              : "text-red-600 dark:text-red-400"
-                                          }`}
-                                        >
-                                          {isPositiveChange('communityTrust', entry.metricChanges.communityTrust[district]) ? (
-                                            <TrendingUp className="h-3 w-3 ml-0.5" />
-                                          ) : (
-                                            <TrendingDown className="h-3 w-3 ml-0.5" />
-                                          )}
-                                          {entry.metricChanges.communityTrust[district] > 0 ? '+' : ''}
-                                          {entry.metricChanges.communityTrust[district]}%
-                                        </span>
-                                      )}
-                                    </div>
-                                  </div>
-                                  <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
-                                    <div 
-                                      className={cn("h-full", getTrustColor(entry.metrics.communityTrust[district]))} 
-                                      style={{ width: `${entry.metrics.communityTrust[district]}%` }}
-                                    ></div>
-                                  </div>
-                                </div>
-
-                                {/* Crime metric with bar */}
-                                <div>
-                                  <div className="flex justify-between items-center mb-1">
-                                    <span className="text-xs font-medium">Crimes</span>
-                                    <div className="flex items-center">
-                                      <span className="text-sm font-semibold">{entry.metrics.crimesReported[district]}</span>
-                                      {entry.metricChanges && entry.metricChanges.crimesReported && (
-                                        <span 
-                                          className={`ml-1 text-xs flex items-center ${
-                                            isPositiveChange('crimesReported', entry.metricChanges.crimesReported[district]) 
-                                              ? "text-green-600 dark:text-green-400" 
-                                              : "text-red-600 dark:text-red-400"
-                                          }`}
-                                        >
-                                          {isPositiveChange('crimesReported', entry.metricChanges.crimesReported[district]) ? (
-                                            <TrendingDown className="h-3 w-3 ml-0.5" />
-                                          ) : (
-                                            <TrendingUp className="h-3 w-3 ml-0.5" />
-                                          )}
-                                          {entry.metricChanges.crimesReported[district] > 0 ? '+' : ''}
-                                          {entry.metricChanges.crimesReported[district]}
-                                        </span>
-                                      )}
-                                    </div>
-                                  </div>
-                                  <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
-                                    <div 
-                                      className={cn("h-full", getCrimeColor(entry.metrics.crimesReported[district]))} 
-                                      style={{ width: `${Math.min(100, entry.metrics.crimesReported[district]/5)}%` }}
-                                    ></div>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* Right column: False Arrest and Clearance Rate */}
-                              <div className="space-y-3">
-                                {/* False Arrest metric with bar */}
-                                <div>
-                                  <div className="flex justify-between items-center mb-1">
-                                    <span className="text-xs font-medium">False Arrests</span>
-                                    <div className="flex items-center">
-                                      <span className="text-sm font-semibold">{entry.metrics.falseArrestRate[district]}%</span>
-                                      {entry.metricChanges && entry.metricChanges.falseArrestRate && (
-                                        <span 
-                                          className={`ml-1 text-xs flex items-center ${
-                                            isPositiveChange('falseArrestRate', entry.metricChanges.falseArrestRate[district]) 
-                                              ? "text-green-600 dark:text-green-400" 
-                                              : "text-red-600 dark:text-red-400"
-                                          }`}
-                                        >
-                                          {isPositiveChange('falseArrestRate', entry.metricChanges.falseArrestRate[district]) ? (
-                                            <TrendingDown className="h-3 w-3 ml-0.5" />
-                                          ) : (
-                                            <TrendingUp className="h-3 w-3 ml-0.5" />
-                                          )}
-                                          {entry.metricChanges.falseArrestRate[district] > 0 ? '+' : ''}
-                                          {entry.metricChanges.falseArrestRate[district]}%
-                                        </span>
-                                      )}
-                                    </div>
-                                  </div>
-                                  <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
-                                    <div 
-                                      className={cn("h-full", getFalseArrestColor(entry.metrics.falseArrestRate[district]))} 
-                                      style={{ width: `${entry.metrics.falseArrestRate[district] * 2}%` }}
-                                    ></div>
-                                  </div>
-                                </div>
-
-                                {/* Add clearance rate calculation */}
-                                <div>
-                                  <div className="flex justify-between items-center mb-1">
-                                    <span className="text-xs font-medium">Clearance Rate</span>
-                                    <span className="text-sm font-semibold">
-                                      {Math.round((entry.metrics.arrests && entry.metrics.crimesReported && 
-                                      entry.metrics.arrests[district] && entry.metrics.crimesReported[district]) ? 
-                                      (entry.metrics.arrests[district] / entry.metrics.crimesReported[district]) * 100 : 0)}%
-                                    </span>
-                                  </div>
-                                  <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
-                                    <div 
-                                      className={`h-full ${
-                                        (entry.metrics.arrests && entry.metrics.crimesReported &&
-                                         entry.metrics.arrests[district] && entry.metrics.crimesReported[district] &&
-                                         (entry.metrics.arrests[district] / entry.metrics.crimesReported[district]) * 100 >= 70) ? 
-                                          "bg-green-500" : 
-                                          (entry.metrics.arrests && entry.metrics.crimesReported &&
-                                           entry.metrics.arrests[district] && entry.metrics.crimesReported[district] &&
-                                           (entry.metrics.arrests[district] / entry.metrics.crimesReported[district]) * 100 >= 40) ? 
-                                            "bg-yellow-500" : 
-                                            "bg-blue-500"
-                                      }`} 
-                                      style={{ width: `${Math.min(100, (entry.metrics.arrests && entry.metrics.crimesReported &&
-                                        entry.metrics.arrests[district] && entry.metrics.crimesReported[district]) ? 
-                                        (entry.metrics.arrests[district] / entry.metrics.crimesReported[district]) * 100 : 0)}%` }}
-                                    ></div>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Add population section */}
-                    <h3 className="font-medium mb-2">District Population</h3>
-                    <div className="grid grid-cols-4 gap-2 mb-4">
-                      {["district1", "district2", "district3", "district4"].map((district) => (
-                        <div key={district} className={`rounded-md text-sm ${districtColors[district]}`}>
-                          <div className={`font-medium p-2 ${districtHeaderColors[district]}`}>
-                            {getDistrictName(district)}
-                          </div>
-                          <div className="p-2">
-                            <div className="font-medium">
-                              {entry.population && entry.population[district] ? entry.population[district].toLocaleString() : 'N/A'}
-                            </div>
-                            {entry.metricChanges && entry.metricChanges[district] && 
-                             entry.metricChanges[district].population !== undefined && 
-                             entry.metricChanges[district].population !== 0 && (
-                              <div className={`text-xs ${
-                                entry.metricChanges[district].population > 0 ? 'text-green-600' : 'text-red-600'
-                              }`}>
-                                {entry.metricChanges[district].population > 0 ? '+' : ''}
-                                {entry.metricChanges[district].population.toLocaleString()}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {entry.feedback && (
-                      <div className="bg-muted p-3 rounded-md text-sm">
-                        <h3 className="font-medium mb-1">Analyst Feedback</h3>
-                        <div className="space-y-1">
-                          {entry.feedback.split('. ').filter(item => item.trim()).map((point, index) => (
-                            <div key={index} className="flex items-start gap-2">
-                              <AlertCircle className="h-4 w-4 text-amber-500 flex-shrink-0 mt-0.5" />
-                              <span>{point.trim()}{!point.endsWith('.') ? '.' : ''}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-
-                {gameLog.length < currentRound - 1 && (
-                  <div className="text-center py-4 text-muted-foreground text-sm">
-                    End of round history. Complete the current round to see more results.
-                  </div>
-                )}
-              </div>
-            </ScrollArea>
-          )}
+              {gameLog.length < currentRound - 1 && (
+                <div className="text-center py-4 text-muted-foreground text-sm">
+                  End of round history. Complete the current round to see more results.
+                </div>
+              )}
+            </div>
+          </ScrollArea>
         </CardContent>
       </Card>
     </div>
