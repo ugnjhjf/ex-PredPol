@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { HelpCircle, Users, CheckCircle2, Sun, Moon, Shield, Info } from "lucide-react";
+import { HelpCircle, Users, CheckCircle2, Sun, Moon, Shield, Info, UserCheck, Plus } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
@@ -374,9 +374,10 @@ export default function CityMap({
                       size="sm" 
                       variant="secondary"
                       onClick={() => openActionDialog(district)}
-                      className="h-7 text-xs px-2.5"
+                      className="h-7 text-xs px-2.5 bg-blue-500 hover:bg-blue-600 text-white flex items-center gap-1"
                       disabled={remainingActionPoints === 0 && !hasSelectedAction}
                     >
+                      <Plus className="h-3 w-3" />
                       Select Action
                     </Button>
                   )}
@@ -389,240 +390,253 @@ export default function CityMap({
                 </CardDescription>
               </CardHeader>
 
-              <CardContent className="p-3 grid grid-cols-2 gap-3">
-                {/* Left column: metrics and police allocation */}
-                <div className="space-y-2">
-                  {/* Metrics at the top */}
-                  <div className="grid grid-cols-3 gap-1.5 text-xs mb-2">
-                    <div className={`p-1.5 rounded flex flex-col items-center ${getTrustColor(gameMetrics.communityTrust[district])}`}>
-                      <span>Trust</span>
-                      <span className="font-bold text-sm">{gameMetrics.communityTrust[district]}%</span>
-                    </div>
-                    <div className={`p-1.5 rounded flex flex-col items-center ${getCrimeColor(gameMetrics.crimesReported[district])}`}>
-                      <span>Crime</span>
-                      <span className="font-bold text-sm">{gameMetrics.crimesReported[district]}</span>
-                    </div>
-                    <div className={`p-1.5 rounded flex flex-col items-center ${getFalseArrestColor(gameMetrics.falseArrestRate[district])}`}>
-                      <span>False</span>
-                      <span className="font-bold text-sm">{gameMetrics.falseArrestRate[district]}%</span>
-                    </div>
+              <CardContent className="p-3">
+                {/* 5 key metrics at the top in grid layout */}
+                <div className="grid grid-cols-5 gap-1.5 text-xs mb-3">
+                  {/* Population */}
+                  <div className="p-1.5 rounded flex flex-col items-center bg-violet-100 dark:bg-violet-900 text-violet-800 dark:text-violet-200">
+                    <span>Population</span>
+                    <span className="font-bold text-sm">{gameMetrics.population[district].toLocaleString()}</span>
                   </div>
                   
-                  {/* Police allocation controls */}
-                  <div className="bg-muted/40 p-2 rounded space-y-2">
-                    <div className="flex justify-between items-center mb-1">
-                      <h4 className="text-xs font-medium flex items-center">
-                        <Shield className="h-3.5 w-3.5 mr-1" />
-                        Police: {totalPolice} officers
-                      </h4>
-                      <div>
-                        {totalPolice > 7 && (
-                          <Badge variant="destructive" className="text-[10px] px-1.5 py-0">Over-policed</Badge>
-                        )}
-                        {totalPolice < 3 && (
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">Under-policed</Badge>
-                        )}
-                      </div>
-                    </div>
-                    
-                    {/* Day shift with sun icon */}
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center">
-                        <Sun className="h-3 w-3 mr-1 text-amber-500" />
-                        <label className="text-xs">Day Shift:</label>
-                      </div>
-                      <div className="flex space-x-1 items-center">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="h-5 w-5 p-0 text-xs"
-                          onClick={() => {
-                            if (policeAllocation[district].day > 1) {
-                              handlePoliceAllocation(district, "day", policeAllocation[district].day - 1)
-                            }
-                          }}
-                          disabled={policeAllocation[district].day <= 1}
-                        >
-                          -
-                        </Button>
-                        <span className="w-4 text-center text-xs">{policeAllocation[district].day}</span>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="h-5 w-5 p-0 text-xs"
-                          onClick={() => handlePoliceAllocation(district, "day", policeAllocation[district].day + 1)}
-                          disabled={policeAllocation.unallocated <= 0}
-                        >
-                          +
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    {/* Night shift with moon icon */}
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center">
-                        <Moon className="h-3 w-3 mr-1 text-indigo-400" />
-                        <label className="text-xs">Night Shift:</label>
-                      </div>
-                      <div className="flex space-x-1 items-center">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="h-5 w-5 p-0 text-xs"
-                          onClick={() => {
-                            if (policeAllocation[district].night > 1) {
-                              handlePoliceAllocation(district, "night", policeAllocation[district].night - 1)
-                            }
-                          }}
-                          disabled={policeAllocation[district].night <= 1}
-                        >
-                          -
-                        </Button>
-                        <span className="w-4 text-center text-xs">{policeAllocation[district].night}</span>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="h-5 w-5 p-0 text-xs"
-                          onClick={() => handlePoliceAllocation(district, "night", policeAllocation[district].night + 1)}
-                          disabled={policeAllocation.unallocated <= 0}
-                        >
-                          +
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    {/* Shift effectiveness info */}
-                    <div className="pt-1 text-[10px] text-muted-foreground italic">
-                      <Popover>
-                        <PopoverTrigger className="underline cursor-help">Shift effectiveness info</PopoverTrigger>
-                        <PopoverContent side="bottom" className="p-2 text-xs w-60">
-                          {getShiftEffectivenessInfo(district)}
-                        </PopoverContent>
-                      </Popover>
-                    </div>
+                  {/* Community Trust */}
+                  <div className={`p-1.5 rounded flex flex-col items-center ${getTrustColor(gameMetrics.communityTrust[district])}`}>
+                    <span>Trust</span>
+                    <span className="font-bold text-sm">{gameMetrics.communityTrust[district]}%</span>
                   </div>
-
-                  {/* Common crimes */}
-                  <div className="text-xs">
-                    <h4 className="font-medium mb-0.5">Common Crimes:</h4>
-                    <div className="flex flex-wrap gap-1">
-                      {gameMetrics.commonCrimes[district].map((crime, index) => (
-                        <Badge key={index} variant="outline" className="text-[10px] py-0">{crime}</Badge>
-                      ))}
-                    </div>
+                  
+                  {/* Crimes Reported */}
+                  <div className={`p-1.5 rounded flex flex-col items-center ${getCrimeColor(gameMetrics.crimesReported[district])}`}>
+                    <span>Crimes</span>
+                    <span className="font-bold text-sm">{gameMetrics.crimesReported[district]}</span>
+                  </div>
+                  
+                  {/* Suspects Arrested */}
+                  <div className="p-1.5 rounded flex flex-col items-center bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
+                    <span>Arrests</span>
+                    <span className="font-bold text-sm">{gameMetrics.arrests?.[district] || 0}</span>
+                  </div>
+                  
+                  {/* False Arrest Rate */}
+                  <div className={`p-1.5 rounded flex flex-col items-center ${getFalseArrestColor(gameMetrics.falseArrestRate[district])}`}>
+                    <span>False Arrests</span>
+                    <span className="font-bold text-sm">{gameMetrics.falseArrestRate[district]}%</span>
                   </div>
                 </div>
                 
-                {/* Right column: demographics and actions */}
-                <div className="space-y-2">
-                  {/* Population with users icon */}
-                  <div className="flex items-center justify-between text-xs mb-1">
-                    <div className="flex items-center">
-                      <Users className="h-3.5 w-3.5 mr-1" />
-                      <span className="font-medium">Population:</span>
-                    </div>
-                    <span className="font-bold">{gameMetrics.population[district].toLocaleString()}</span>
-                  </div>
-                  
-                  {/* Demographics with pie charts - Adjusted to make pie charts larger */}
-                  <div className="space-y-1">
-                    <h5 className="text-xs font-medium">Demographics</h5>
-                    <div className="grid grid-cols-2 gap-2 bg-muted/30 p-2 rounded">
-                      {/* Ethnicity pie chart - Using larger chart */}
-                      <div>
-                        <h6 className="text-[10px] mb-0.5 text-center">Ethnicity</h6>
-                        <div className="flex justify-center">
-                          <PieChart 
-                            data={demographics.ethnicity} 
-                            size={60} // Increased size from 50 to 60
-                          />
-                        </div>
-                        <div className="grid grid-cols-2 gap-x-1 mt-1">
-                          {Object.entries(demographics.ethnicity).map(([key, value]) => (
-                            <div key={key} className="flex items-center text-[9px]">
-                              <div 
-                                className="w-1.5 h-1.5 rounded-full mr-0.5"
-                                style={{ 
-                                  backgroundColor: key === 'white' ? '#60a5fa' : 
-                                                  key === 'black' ? '#4ade80' :
-                                                  key === 'hispanic' ? '#facc15' : '#c084fc'
-                                }}
-                              />
-                              <span>{key.charAt(0).toUpperCase() + key.slice(1)}: {value}%</span>
-                            </div>
-                          ))}
+                {/* Remaining content in two columns */}
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Left column: Community trust and police allocation */}
+                  <div className="space-y-2">
+                    {/* Community Trust */}
+
+                    
+                    {/* Police allocation controls */}
+                    <div className="bg-muted/40 p-2 rounded space-y-2">
+                      <div className="flex justify-between items-center mb-1">
+                        <h4 className="text-xs font-medium flex items-center">
+                          <Shield className="h-3.5 w-3.5 mr-1" />
+                          Police: {totalPolice} officers
+                        </h4>
+                        <div>
+                          {totalPolice > 7 && (
+                            <Badge variant="destructive" className="text-[10px] px-1.5 py-0">Over-policed</Badge>
+                          )}
+                          {totalPolice < 3 && (
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0">Under-policed</Badge>
+                          )}
                         </div>
                       </div>
                       
-                      {/* Income pie chart - Using larger chart */}
-                      <div>
-                        <h6 className="text-[10px] mb-0.5 text-center">Income</h6>
-                        <div className="flex justify-center">
-                          <PieChart 
-                            data={demographics.income} 
-                            size={60} // Increased size from 50 to 60
-                          />
+                      {/* Day shift with sun icon */}
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center">
+                          <Sun className="h-3 w-3 mr-1 text-amber-500" />
+                          <label className="text-xs">Day Shift:</label>
                         </div>
-                        <div className="grid grid-cols-1 gap-x-1 mt-1">
-                          {Object.entries(demographics.income).map(([key, value]) => (
-                            <div key={key} className="flex items-center text-[9px]">
-                              <div 
-                                className="w-1.5 h-1.5 rounded-full mr-0.5"
-                                style={{ 
-                                  backgroundColor: key === 'high' ? '#34d399' : 
-                                                  key === 'middle' ? '#fbbf24' : '#f87171'
-                                }}
-                              />
-                              <span>{key.charAt(0).toUpperCase() + key.slice(1)}: {value}%</span>
-                            </div>
-                          ))}
+                        <div className="flex space-x-1 items-center">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="h-5 w-5 p-0 text-xs"
+                            onClick={() => {
+                              if (policeAllocation[district].day > 1) {
+                                handlePoliceAllocation(district, "day", policeAllocation[district].day - 1)
+                              }
+                            }}
+                            disabled={policeAllocation[district].day <= 1}
+                          >
+                            -
+                          </Button>
+                          <span className="w-4 text-center text-xs">{policeAllocation[district].day}</span>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="h-5 w-5 p-0 text-xs"
+                            onClick={() => handlePoliceAllocation(district, "day", policeAllocation[district].day + 1)}
+                            disabled={policeAllocation.unallocated <= 0}
+                          >
+                            +
+                          </Button>
                         </div>
                       </div>
-                    </div>
-                  </div>
-                  
-                  {/* Implemented actions - Fixed badge hover styles with !important */}
-                  <div className="text-xs">
-                    <h5 className="font-medium">Implemented Actions:</h5>
-                    {districtImplementedActions.length > 0 ? (
-                      <div className="flex flex-wrap gap-1 mt-0.5">
-                        {districtImplementedActions.map((actionId, idx) => (
-                          <Badge 
-                            key={idx}
-                            className={`${getActionBadgeColor(actionId)} text-[10px]`}
-                            style={{ 
-                              // Use !important to override hover styles completely
-                              backgroundColor: actionId === "cctv" ? "var(--blue-100) !important" : 
-                                             actionId === "app" ? "var(--green-100) !important" :
-                                             actionId === "education" ? "var(--amber-100) !important" : 
-                                             actionId === "drone" ? "var(--purple-100) !important" :
-                                             actionId === "facial" ? "var(--rose-100) !important" : "var(--gray-100) !important",
-                              color: actionId === "cctv" ? "var(--blue-800) !important" : 
-                                    actionId === "app" ? "var(--green-800) !important" :
-                                    actionId === "education" ? "var(--amber-800) !important" : 
-                                    actionId === "drone" ? "var(--purple-800) !important" :
-                                    actionId === "facial" ? "var(--rose-800) !important" : "var(--gray-800) !important",
-                              opacity: "1 !important"
+                      
+                      {/* Night shift with moon icon */}
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center">
+                          <Moon className="h-3 w-3 mr-1 text-indigo-400" />
+                          <label className="text-xs">Night Shift:</label>
+                        </div>
+                        <div className="flex space-x-1 items-center">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="h-5 w-5 p-0 text-xs"
+                            onClick={() => {
+                              if (policeAllocation[district].night > 1) {
+                                handlePoliceAllocation(district, "night", policeAllocation[district].night - 1)
+                              }
                             }}
+                            disabled={policeAllocation[district].night <= 1}
                           >
-                            {getShortActionName(actionId)}
-                          </Badge>
+                            -
+                          </Button>
+                          <span className="w-4 text-center text-xs">{policeAllocation[district].night}</span>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="h-5 w-5 p-0 text-xs"
+                            onClick={() => handlePoliceAllocation(district, "night", policeAllocation[district].night + 1)}
+                            disabled={policeAllocation.unallocated <= 0}
+                          >
+                            +
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      {/* Shift effectiveness info */}
+                      <div className="pt-1 text-[10px] text-muted-foreground italic">
+                        <Popover>
+                          <PopoverTrigger className="underline cursor-help">Shift effectiveness info</PopoverTrigger>
+                          <PopoverContent side="bottom" className="p-2 text-xs w-60">
+                            {getShiftEffectivenessInfo(district)}
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    </div>
+
+                    {/* Common crimes */}
+                    <div className="text-xs">
+                      <h4 className="font-medium mb-0.5">Common Crimes:</h4>
+                      <div className="flex flex-wrap gap-1">
+                        {gameMetrics.commonCrimes[district].map((crime, index) => (
+                          <Badge key={index} variant="outline" className="text-[10px] py-0">{crime}</Badge>
                         ))}
                       </div>
-                    ) : (
-                      <p className="text-[10px] text-muted-foreground italic">No actions implemented yet</p>
-                    )}
+                    </div>
                   </div>
                   
-                  {/* Selected action for this round - showing CheckCircle2 icon */}
-                  {districtActions[district] && (
-                    <div className="bg-primary/10 p-1.5 rounded-md flex items-center">
-                      <CheckCircle2 className="h-3.5 w-3.5 text-primary mr-1" />
-                      <span className="text-[10px]">
-                        <span className="font-medium">{actions.find(a => a.id === districtActions[district])?.title}</span> selected for this round
-                      </span>
+                  {/* Right column: demographics and actions */}
+                  <div className="space-y-2">                    
+                    {/* Demographics with pie charts */}
+                    <div className="space-y-1">
+                      <h5 className="text-xs font-medium">Demographics</h5>
+                      <div className="grid grid-cols-2 gap-2 bg-muted/30 p-2 rounded">
+                        {/* Ethnicity pie chart */}
+                        <div>
+                          <h6 className="text-[10px] mb-0.5 text-center">Ethnicity</h6>
+                          <div className="flex justify-center">
+                            <PieChart 
+                              data={demographics.ethnicity} 
+                              size={60}
+                            />
+                          </div>
+                          <div className="grid grid-cols-2 gap-x-1 mt-1">
+                            {Object.entries(demographics.ethnicity).map(([key, value]) => (
+                              <div key={key} className="flex items-center text-[9px]">
+                                <div 
+                                  className="w-1.5 h-1.5 rounded-full mr-0.5"
+                                  style={{ 
+                                    backgroundColor: key === 'white' ? '#60a5fa' : 
+                                                    key === 'black' ? '#4ade80' :
+                                                    key === 'hispanic' ? '#facc15' : '#c084fc'
+                                  }}
+                                />
+                                <span>{key.charAt(0).toUpperCase() + key.slice(1)}: {value}%</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        
+                        {/* Income pie chart */}
+                        <div>
+                          <h6 className="text-[10px] mb-0.5 text-center">Income</h6>
+                          <div className="flex justify-center">
+                            <PieChart 
+                              data={demographics.income} 
+                              size={60}
+                            />
+                          </div>
+                          <div className="grid grid-cols-1 gap-x-1 mt-1">
+                            {Object.entries(demographics.income).map(([key, value]) => (
+                              <div key={key} className="flex items-center text-[9px]">
+                                <div 
+                                  className="w-1.5 h-1.5 rounded-full mr-0.5"
+                                  style={{ 
+                                    backgroundColor: key === 'high' ? '#34d399' : 
+                                                    key === 'middle' ? '#fbbf24' : '#f87171'
+                                  }}
+                                />
+                                <span>{key.charAt(0).toUpperCase() + key.slice(1)}: {value}%</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  )}
+                    
+                    {/* Implemented actions */}
+                    <div className="text-xs">
+                      <h5 className="font-medium">Implemented Actions:</h5>
+                      {districtImplementedActions.length > 0 ? (
+                        <div className="flex flex-wrap gap-1 mt-0.5">
+                          {districtImplementedActions.map((actionId, idx) => (
+                            <Badge 
+                              key={idx}
+                              className={`${getActionBadgeColor(actionId)} text-[10px]`}
+                              style={{ 
+                                backgroundColor: actionId === "cctv" ? "var(--blue-100) !important" : 
+                                               actionId === "app" ? "var(--green-100) !important" :
+                                               actionId === "education" ? "var(--amber-100) !important" : 
+                                               actionId === "drone" ? "var(--purple-100) !important" :
+                                               actionId === "facial" ? "var(--rose-100) !important" : "var(--gray-100) !important",
+                                color: actionId === "cctv" ? "var(--blue-800) !important" : 
+                                      actionId === "app" ? "var(--green-800) !important" :
+                                      actionId === "education" ? "var(--amber-800) !important" : 
+                                      actionId === "drone" ? "var(--purple-800) !important" :
+                                      actionId === "facial" ? "var(--rose-800) !important" : "var(--gray-800) !important",
+                                opacity: "1 !important"
+                              }}
+                            >
+                              {getShortActionName(actionId)}
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-[10px] text-muted-foreground italic">No actions implemented yet</p>
+                      )}
+                    </div>
+                    
+                    {/* Selected action for this round */}
+                    {districtActions[district] && (
+                      <div className="bg-primary/10 p-1.5 rounded-md flex items-center">
+                        <CheckCircle2 className="h-3.5 w-3.5 text-primary mr-1" />
+                        <span className="text-[10px]">
+                          <span className="font-medium">{actions.find(a => a.id === districtActions[district])?.title}</span> selected for this round
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
