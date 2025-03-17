@@ -452,7 +452,7 @@ export function RoundSummary({ currentRound, gameMetrics, roundSummary, getDistr
 
         {/* Right column: Feedback and Events - narrower (4/12) */}
         <div className="md:col-span-4 space-y-3">
-          {/* Round Feedback */}
+          {/* Round Feedback - Updated with emojis and more concise text */}
           {roundSummary.feedback && (
             <Card className="border-blue-200 dark:border-blue-800">
               <CardHeader className="bg-blue-50 dark:bg-blue-900/30 py-1.5 px-3">
@@ -460,20 +460,47 @@ export function RoundSummary({ currentRound, gameMetrics, roundSummary, getDistr
               </CardHeader>
               <CardContent className="py-2 px-3">
                 <div className="text-blue-800 dark:text-blue-300 space-y-1.5">
-                  {roundSummary.feedback.split('. ').filter(item => item.trim()).map((point, idx) => (
-                    <div key={idx} className="flex items-start gap-1.5">
-                      <span className="text-blue-600 dark:text-blue-400 mt-0.5">•</span>
-                      <span className="flex-1 text-xs">
-                        {point.trim()}{!point.endsWith('.') ? '.' : ''}
-                      </span>
-                    </div>
-                  ))}
+                  {roundSummary.feedback.split('. ').filter(item => item.trim()).map((point, idx) => {
+                    // Add emoji based on point content
+                    let emoji = "ℹ️";
+                    if (point.match(/trust|relationship|community|cooperation/i)) emoji = "🤝";
+                    else if (point.match(/crime|offenses|violations/i)) emoji = "🚨";
+                    else if (point.match(/police|officer|patrols/i)) emoji = "👮";
+                    else if (point.match(/surveillance|camera|cctv|monitoring/i)) emoji = "📹";
+                    else if (point.match(/budget|cost|expense|fund/i)) emoji = "💰";
+                    else if (point.match(/education|training|program/i)) emoji = "📚";
+                    else if (point.match(/arrest|detention|jail/i)) emoji = "⚖️";
+                    else if (point.match(/warning|caution|risk/i)) emoji = "⚠️";
+                    else if (point.match(/improvement|better|progress/i)) emoji = "📈";
+                    else if (point.match(/decrease|reduced|lower/i)) emoji = "📉";
+                    else if (point.match(/minority|race|ethnic|bias/i)) emoji = "🧩";
+                    else if (point.match(/balance|equilibrium|stability/i)) emoji = "⚖️";
+                    else if (point.match(/disparity|inequality|gap/i)) emoji = "⚡";
+                    
+                    // Make feedback more concise by trimming lengthy explanations
+                    let concisePoint = point.trim();
+                    // Remove phrases like "You should consider that" or "It's noteworthy that"
+                    concisePoint = concisePoint.replace(/^(you should (note|consider) that|it('s| is) (noteworthy|important|notable) that)\s+/i, '');
+                    // Trim any sentences over 100 characters
+                    if (concisePoint.length > 100) {
+                      concisePoint = concisePoint.substring(0, 97) + '...';
+                    }
+                    // Ensure proper sentence ending
+                    if (!concisePoint.endsWith('.')) concisePoint += '.';
+                    
+                    return (
+                      <div key={idx} className="flex items-start gap-1.5">
+                        <span className="text-blue-600 dark:text-blue-400 mt-0.5">{emoji}</span>
+                        <span className="flex-1 text-xs">{concisePoint}</span>
+                      </div>
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>
           )}
 
-          {/* Round Events */}
+          {/* Round Events - Updated with emojis */}
           {roundSummary.changes && roundSummary.changes.length > 0 && (
             <Card>
               <CardHeader className="bg-primary/5 py-1.5 px-3">
@@ -482,25 +509,38 @@ export function RoundSummary({ currentRound, gameMetrics, roundSummary, getDistr
               <CardContent className="py-2 px-3">
                 <ScrollArea className="pr-3 max-h-64">
                   <div className="space-y-1">
-                    {roundSummary.changes.map((change, idx) => (
-                      <div key={idx} className="flex items-start gap-1.5">
-                        <span className="text-primary mt-0.5">•</span>
-                        <span className="text-xs">{change}</span>
-                      </div>
-                    ))}
+                    {roundSummary.changes.map((change, idx) => {
+                      // Add emoji based on event content
+                      let emoji = "📋";
+                      if (change.match(/trust|relationship|community/i)) emoji = "🤝";
+                      else if (change.match(/crime|criminal|offense|reported/i)) emoji = "🚨";
+                      else if (change.match(/police|officer|patrol/i)) emoji = "👮";
+                      else if (change.match(/increase|grew|higher|more/i)) emoji = "📈";
+                      else if (change.match(/decrease|drop|lower|less|reduced/i)) emoji = "📉";
+                      else if (change.match(/arrest|detained|caught/i)) emoji = "🔒";
+                      else if (change.match(/implement|deploy|start/i)) emoji = "🚀";
+                      else if (change.match(/budget|cost|expense|fund/i)) emoji = "💰";
+                      else if (change.match(/population|resident|citizen/i)) emoji = "👥";
+                      else if (change.match(/education|training|program/i)) emoji = "📚";
+                      else if (change.match(/app|technology|digital|online/i)) emoji = "📱";
+                      else if (change.match(/camera|surveillance|cctv/i)) emoji = "📹";
+                      else if (change.match(/drone/i)) emoji = "🚁";
+                      else if (change.match(/recognition|facial/i)) emoji = "👁️";
+                      
+                      return (
+                        <div key={idx} className="flex items-start gap-1.5">
+                          <span className="text-primary mt-0.5">{emoji}</span>
+                          <span className="text-xs">{change}</span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </ScrollArea>
               </CardContent>
             </Card>
           )}
 
-          {/* Continue button - Right aligned */}
-          <div className="flex justify-end mt-3">
-            <Button onClick={onContinue} size="sm" className="flex items-center gap-1.5">
-              Continue
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Button>
-          </div>
+          
         </div>
       </div>
     </div>
