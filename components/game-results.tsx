@@ -1,16 +1,113 @@
 "use client"
 
-import React from "react";
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { CheckCircle, XCircle, AlertTriangle, RefreshCcw, ArrowRight, ArrowLeft, AlertCircle } from "lucide-react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Progress } from "@/components/ui/progress"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import React, { useState } from "react";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { 
+  RefreshCcw, ArrowRight, ArrowLeft, AlertTriangle, 
+  TrendingUp, TrendingDown
+} from "lucide-react";
 
-// Change to arrow function with explicit typing
+// EXTRACTED COMPONENT 1: ScoreGradeDisplay - Display score and letter grade
+const ScoreGradeDisplay = ({ totalScore, scoreGrade }) => (
+  <div className="flex flex-col md:flex-row gap-3 items-center justify-center py-1 border-b pb-3">
+    <div className="flex items-center gap-3">
+      <div className={`
+        w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold
+        ${totalScore >= 70 ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100" : 
+          totalScore >= 50 ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100" : 
+          "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100"}
+      `}>
+        {scoreGrade.letter}
+      </div>
+      <div className="text-center md:text-left">
+        <h3 className="text-xl font-bold">{totalScore}/100 Points</h3>
+        <p className="text-sm font-medium">{scoreGrade.label} Performance</p>
+      </div>
+    </div>
+    
+    <div className="flex-1 max-w-md">
+      <p className="text-center md:text-left text-sm">{scoreGrade.description}</p>
+    </div>
+  </div>
+);
+
+// EXTRACTED COMPONENT 2: MetricCard - Display key metrics with consistent styling
+const MetricCard = ({ metric }) => (
+  <div className="border rounded-md p-4">
+    <div className="flex items-start justify-between mb-2">
+      <div>
+        <h4 className="font-bold mb-1">{metric.name}</h4>
+        <div className="flex items-center gap-2">
+          <span className={`text-xl font-bold ${
+            metric.achieved ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
+          }`}>
+            {metric.value}
+          </span>
+          <Badge variant={metric.achieved ? "outline" : "secondary"} className="text-xs">
+            Target: {metric.target}
+          </Badge>
+        </div>
+      </div>
+    </div>
+    
+    <div className="mb-4">
+      <div className="h-2 w-full bg-gray-200 dark:bg-gray-700 rounded-full">
+        <div 
+          className={`h-2 rounded-full ${metric.color}`} 
+          style={{ width: `${metric.percentage}%` }}
+        ></div>
+      </div>
+    </div>
+    
+    <p className="text-sm text-muted-foreground mb-3">{metric.description}</p>
+    
+    <div className="space-y-2">
+      <div>
+        <p className="text-xs font-medium text-green-600 dark:text-green-400 mb-1">What Improved This:</p>
+        <ul className="text-xs space-y-1">
+          {metric.improves.map((item, i) => (
+            <li key={i} className="flex items-start">
+              <span className="text-green-500 mr-1.5">+</span>
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+      
+      <div>
+        <p className="text-xs font-medium text-red-600 dark:text-red-400 mb-1">What Reduced This:</p>
+        <ul className="text-xs space-y-1">
+          {metric.reduces.map((item, i) => (
+            <li key={i} className="flex items-start">
+              <span className="text-red-500 mr-1.5">-</span>
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  </div>
+);
+
+// EXTRACTED COMPONENT 3: LessonSection - Display AI and bias content sections
+const LessonSection = ({ section }) => (
+  <div className="mb-4">
+    <h4 className="text-base font-semibold mb-1">{section.title}</h4>
+    <p className="text-sm mb-2">{section.content}</p>
+    <ul className="space-y-1 text-sm">
+      {section.key_points.map((point, idx) => (
+        <li key={idx} className="flex items-start">
+          <span className="text-primary inline-block mr-1.5">•</span>
+          <span>{point}</span>
+        </li>
+      ))}
+    </ul>
+  </div>
+);
+
+// Main component
 const GameResults: React.FC<{
   metrics: any;
   onReset: () => void;
@@ -18,13 +115,13 @@ const GameResults: React.FC<{
   gameEndReason?: "completed" | "bankrupt";
 }> = ({ metrics, onReset, gameLog, gameEndReason = "completed" }) => {
   // Add state to track which page we're showing
-  const [currentPage, setCurrentPage] = React.useState<"metrics" | "lessons">("metrics");
+  const [currentPage, setCurrentPage] = useState<"metrics" | "lessons">("metrics");
 
   // Calculate key metrics
   const avgTrust = (metrics.communityTrust.district1 + 
                     metrics.communityTrust.district2 + 
                     metrics.communityTrust.district3 + 
-                    metrics.communityTrust.district4) / 4
+                    metrics.communityTrust.district4) / 4;
 
   const avgCrime = (Math.min(100, metrics.crimesReported.district1 / 2) +
                     Math.min(100, metrics.crimesReported.district2 / 2) +
@@ -294,7 +391,7 @@ const GameResults: React.FC<{
         </CardHeader>
 
         <CardContent className="space-y-4">
-          {/* Game Over Alert for Bankruptcy - more compact */}
+          {/* Game Over Alert for Bankruptcy */}
           {gameEndReason === "bankrupt" && (
             <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-3 dark:bg-red-900/50 dark:text-red-100 text-sm">
               <div className="flex items-center">
@@ -308,27 +405,8 @@ const GameResults: React.FC<{
             </div>
           )}
           
-          {/* Score & Grade Display - more compact */}
-          <div className="flex flex-col md:flex-row gap-3 items-center justify-center py-1 border-b pb-3">
-            <div className="flex items-center gap-3">
-              <div className={`
-                w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold
-                ${totalScore >= 70 ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100" : 
-                  totalScore >= 50 ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100" : 
-                  "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100"}
-              `}>
-                {scoreGrade.letter}
-              </div>
-              <div className="text-center md:text-left">
-                <h3 className="text-xl font-bold">{totalScore}/100 Points</h3>
-                <p className="text-sm font-medium">{scoreGrade.label} Performance</p>
-              </div>
-            </div>
-            
-            <div className="flex-1 max-w-md">
-              <p className="text-center md:text-left text-sm">{scoreGrade.description}</p>
-            </div>
-          </div>
+          {/* Using ScoreGradeDisplay component */}
+          <ScoreGradeDisplay totalScore={totalScore} scoreGrade={scoreGrade} />
           
           {/* Page Navigation */}
           <div className="flex justify-center gap-2">
@@ -378,7 +456,7 @@ const GameResults: React.FC<{
                   </div>
                 </div>
 
-                {/* Detailed metrics explanation - Two-column layout with INCREASED font sizes */}
+                {/* Detailed metrics explanation - Using MetricCard component */}
                 <div>
                   <h3 className="text-base font-medium mb-2">Your Performance Metrics Explained</h3>
                   <p className="text-sm text-muted-foreground mb-3">
@@ -389,98 +467,8 @@ const GameResults: React.FC<{
                   {/* Individual Metrics - 2 column grid */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {coreMetrics.map((metric, idx) => (
-                      <div key={idx} className="border rounded-lg overflow-hidden">
-                        <div className={`p-2 ${
-                          metric.name === "Community Trust" ? "bg-blue-50 dark:bg-blue-900/30" : 
-                          metric.name === "Crime Rate" ? "bg-green-50 dark:bg-green-900/30" : 
-                          metric.name === "False Arrest Rate" ? "bg-amber-50 dark:bg-amber-900/30" : 
-                          "bg-purple-50 dark:bg-purple-900/30"
-                        }`}>
-                          <h4 className="font-medium flex items-center justify-between text-sm">
-                            <span>{metric.name}</span>
-                            <Badge variant={metric.achieved ? "success" : "destructive"} className="text-xs">
-                              {metric.value} (Target: {metric.target})
-                            </Badge>
-                          </h4>
-                        </div>
-                        <div className="p-3 space-y-2">
-                          <p className="text-sm">{metric.description}</p>
-                          
-                          <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                            <div 
-                              className={`h-2 ${metric.color}`} 
-                              style={{ width: `${metric.name === "Crime Rate" ? 100 - metric.percentage : metric.percentage}%` }}
-                            />
-                          </div>
-                          
-                          {/* Factors that influence this metric - INCREASED font sizes */}
-                          <div className="grid grid-cols-2 gap-2 pt-1">
-                            <div>
-                              <h5 className="text-xs font-medium text-green-600 dark:text-green-400">What improves this metric:</h5>
-                              <ul className="text-xs space-y-1">
-                                {metric.improves.map((item, i) => (
-                                  <li key={i} className="flex items-start gap-1">
-                                    <span className="text-green-500 flex-shrink-0">+</span>
-                                    <span>{item}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                            <div>
-                              <h5 className="text-xs font-medium text-red-600 dark:text-red-400">What worsens this metric:</h5>
-                              <ul className="text-xs space-y-1">
-                                {metric.reduces.map((item, i) => (
-                                  <li key={i} className="flex items-start gap-1">
-                                    <span className="text-red-500 flex-shrink-0">−</span>
-                                    <span>{item}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+                      <MetricCard key={idx} metric={metric} />
                     ))}
-                  </div>
-                </div>
-
-                {/* District comparison - more compact with INCREASED font sizes */}
-                <div className="border rounded-lg overflow-hidden">
-                  <div className="p-2 bg-muted/50">
-                    <h4 className="font-medium text-sm">District Performance Comparison</h4>
-                  </div>
-                  <div className="p-2">
-                    <div className="space-y-2">
-                      <div className="grid grid-cols-5 gap-2 mb-1">
-                        <div className="text-xs font-medium">District</div>
-                        <div className="text-xs font-medium text-center">Trust</div>
-                        <div className="text-xs font-medium text-center">Crimes</div>
-                        <div className="text-xs font-medium text-center">False Arrests</div>
-                        <div className="text-xs font-medium text-center">Population</div>
-                      </div>
-                      
-                      {["district1", "district2", "district3", "district4"].map((district, idx) => (
-                        <div key={idx} className="grid grid-cols-5 gap-2 p-2 bg-muted rounded-md">
-                          <div className="text-xs font-medium">
-                            {district === "district1" ? "Downtown" :
-                            district === "district2" ? "Westside" :
-                            district === "district3" ? "South Side" : "Eastside"}
-                          </div>
-                          <div className={`text-xs text-center ${metrics.communityTrust[district] >= 60 ? "text-green-600" : "text-red-600"}`}>
-                            {metrics.communityTrust[district]}%
-                          </div>
-                          <div className={`text-xs text-center ${metrics.crimesReported[district] <= 40 ? "text-green-600" : "text-red-600"}`}>
-                            {metrics.crimesReported[district]}
-                          </div>
-                          <div className={`text-xs text-center ${metrics.falseArrestRate[district] <= 15 ? "text-green-600" : "text-red-600"}`}>
-                            {metrics.falseArrestRate[district]}%
-                          </div>
-                          <div className="text-xs text-center">
-                            {metrics.population[district].toLocaleString()}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
                   </div>
                 </div>
 
@@ -494,206 +482,67 @@ const GameResults: React.FC<{
               </div>
             )}
 
-            {/* Page 2: Key Takeaways & Lessons with INCREASED font sizes */}
+            {/* Page 2: Key Takeaways & Lessons */}
             {currentPage === "lessons" && (
               <div className="space-y-4">
                 {/* Two-column layout for lessons page */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {/* Main takeaways in first column */}
                   <div className="border rounded-lg overflow-hidden h-fit">
-                    <div className="p-2 bg-blue-50 dark:bg-blue-900/30">
-                      <h4 className="font-medium text-sm">Key Takeaways From Your Approach</h4>
+                    <div className="p-2.5 bg-green-50 dark:bg-green-900/30">
+                      <h3 className="font-medium text-sm">Main Takeaways</h3>
                     </div>
-                    <div className="p-3 space-y-1.5">
-                      {getTakeaways().map((takeaway, index) => (
-                        <div key={index} className="flex items-start text-sm gap-2 pb-2">
-                          <span className="text-primary mt-0.5">•</span>
-                          <span className="flex-1">{takeaway}</span>
-                        </div>
-                      ))}
+                    <div className="p-3">
+                      <ul className="space-y-2 text-sm">
+                        {getTakeaways().map((takeaway, idx) => (
+                          <li key={idx} className="flex items-start">
+                            <span className="text-primary inline-block mr-1.5">•</span>
+                            <span>{takeaway}</span>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                   </div>
 
-                  {/* What this simulation teaches in second column */}
+                  {/* Key lessons in second column */}
                   <div className="border rounded-lg overflow-hidden h-fit">
-                    <div className="p-2 bg-green-50 dark:bg-green-900/30">
-                      <h4 className="font-medium text-sm">Key Lessons About Technology & Bias in Policing</h4>
+                    <div className="p-2.5 bg-blue-50 dark:bg-blue-900/30">
+                      <h3 className="font-medium text-sm">Key Lessons on Algorithmic Policing</h3>
                     </div>
-                    <div className="p-3 space-y-1.5">
-                      {keyLessons.map((lesson, index) => (
-                        <div key={index} className="flex items-start text-sm gap-2 pb-2">
-                          <span className="text-green-600 dark:text-green-400 mt-0.5">•</span>
-                          <span className="flex-1">{lesson}</span>
-                        </div>
-                      ))}
+                    <div className="p-3">
+                      <ul className="space-y-2 text-sm">
+                        {keyLessons.map((lesson, idx) => (
+                          <li key={idx} className="flex items-start">
+                            <span className="text-primary inline-block mr-1.5">•</span>
+                            <span>{lesson}</span>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                   </div>
                 </div>
 
-                {/* NEW SECTION: AI, Big Data & Algorithmic Bias - More compact accordion with INCREASED font sizes */}
+                {/* AI and bias content using the LessonSection component */}
                 <div className="border rounded-lg overflow-hidden">
                   <div className="p-2.5 bg-indigo-50 dark:bg-indigo-900/30">
-                    <h4 className="font-medium flex items-center gap-2 text-sm">
-                      <AlertCircle className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-                      {aiAndBiasContent.title}
-                    </h4>
+                    <h3 className="font-medium text-sm">{aiAndBiasContent.title}</h3>
                   </div>
                   <div className="p-3">
-                    <p className="text-sm mb-3">{aiAndBiasContent.introduction}</p>
+                    <p className="text-sm mb-4">{aiAndBiasContent.introduction}</p>
+                    {aiAndBiasContent.sections.map((section, idx) => (
+                      <LessonSection key={idx} section={section} />
+                    ))}
                     
-                    <Accordion type="single" collapsible className="w-full">
-                      {aiAndBiasContent.sections.map((section, index) => (
-                        <AccordionItem key={index} value={`section-${index}`} className="border-b py-1">
-                          <AccordionTrigger className="text-sm font-medium py-1.5">{section.title}</AccordionTrigger>
-                          <AccordionContent className="pt-1 pb-2.5">
-                            <div className="space-y-2.5 text-sm">
-                              <p>{section.content}</p>
-                              <div className="bg-muted/50 p-2.5 rounded-md">
-                                <h5 className="font-medium text-xs mb-1.5">Key Points:</h5>
-                                <ul className="space-y-1.5">
-                                  {section.key_points.map((point, pointIndex) => (
-                                    <li key={pointIndex} className="flex items-start text-xs gap-1.5">
-                                      <span className="text-indigo-600 dark:text-indigo-400 mt-0.5">•</span>
-                                      <span>{point}</span>
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            </div>
-                          </AccordionContent>
-                        </AccordionItem>
-                      ))}
-                      
-                      <AccordionItem value="predictive-policing" className="border-b py-1">
-                        <AccordionTrigger className="text-sm font-medium py-1.5">Predictive Policing & Its Risks</AccordionTrigger>
-                        <AccordionContent className="pt-1 pb-2.5">
-                          <div className="space-y-2.5 text-sm">
-                            <p>Predictive policing uses algorithms to forecast where crimes will likely occur, helping departments allocate resources. However, these systems often reinforce existing patterns of over-policing in minority communities.</p>
-                            <div className="bg-muted/50 p-2.5 rounded-md">
-                              <h5 className="font-medium text-xs mb-1.5">The Problem with Prediction:</h5>
-                              <ul className="space-y-1.5">
-                                <li className="flex items-start text-xs gap-1.5">
-                                  <span className="text-indigo-600 dark:text-indigo-400 mt-0.5">•</span>
-                                  <span>Algorithms trained on historical arrest data perpetuate existing biases in where police have focused attention</span>
-                                </li>
-                                <li className="flex items-start text-xs gap-1.5">
-                                  <span className="text-indigo-600 dark:text-indigo-400 mt-0.5">•</span>
-                                  <span>More police presence leads to more arrests, creating a self-reinforcing feedback loop</span>
-                                </li>
-                                <li className="flex items-start text-xs gap-1.5">
-                                  <span className="text-indigo-600 dark:text-indigo-400 mt-0.5">•</span>
-                                  <span>Neighborhoods with fewer police resources generate less crime data, even if crime occurs there</span>
-                                </li>
-                              </ul>
-                            </div>
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                      
-                      <AccordionItem value="recommendations" className="border-b py-1">
-                        <AccordionTrigger className="text-sm font-medium py-1.5">Best Practices for Technology in Policing</AccordionTrigger>
-                        <AccordionContent className="pt-1 pb-2.5">
-                          <div className="bg-green-50 dark:bg-green-900/20 p-2.5 rounded-md">
-                            <ul className="space-y-1.5">
-                              {aiAndBiasContent.recommendations.map((rec, recIndex) => (
-                                <li key={recIndex} className="flex items-start text-xs gap-1.5">
-                                  <span className="text-green-600 dark:text-green-400 mt-0.5">✓</span>
-                                  <span>{rec}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    </Accordion>
-
-                    {/* Real-world examples - More compact with INCREASED font sizes */}
-                    <div className="mt-4 border border-indigo-100 dark:border-indigo-800 rounded-md">
-                      <div className="p-2 bg-indigo-50 dark:bg-indigo-900/50 text-sm font-medium">
-                        Real-world Examples
-                      </div>
-                      <div className="p-2.5 text-xs space-y-2">
-                        <ul className="space-y-2">
-                          <li className="flex items-start gap-1.5">
-                            <span className="text-indigo-600 dark:text-indigo-400 mt-0.5">•</span>
-                            <span>
-                              <strong>Facial Recognition:</strong> A 2019 study found some commercial algorithms had error rates up to 34% higher for darker-skinned females compared to lighter-skinned males. Several cities have since banned facial recognition use by police.
-                            </span>
+                    <div className="mt-4">
+                      <h4 className="text-base font-semibold mb-1">Recommendations</h4>
+                      <ul className="space-y-1 text-sm">
+                        {aiAndBiasContent.recommendations.map((rec, idx) => (
+                          <li key={idx} className="flex items-start">
+                            <span className="text-primary inline-block mr-1.5">•</span>
+                            <span>{rec}</span>
                           </li>
-                          <li className="flex items-start gap-1.5">
-                            <span className="text-indigo-600 dark:text-indigo-400 mt-0.5">•</span>
-                            <span>
-                              <strong>PredPol:</strong> A predictive policing system used in over 60 police departments that forecasts crime based on historical arrest data. Studies found it consistently directed officers to the same neighborhoods, regardless of actual crime distribution.
-                            </span>
-                          </li>
-                          <li className="flex items-start gap-1.5">
-                            <span className="text-indigo-600 dark:text-indigo-400 mt-0.5">•</span>
-                            <span>
-                              <strong>COMPAS:</strong> A risk assessment tool that predicted Black defendants were at higher risk of reoffending than they actually were, while white defendants were predicted to be less risky than they actually were.
-                            </span>
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Critical Balance Factors - 2-column grid with INCREASED font sizes */}
-                <div className="border rounded-lg overflow-hidden">
-                  <div className="p-2.5 bg-purple-50 dark:bg-purple-900/30">
-                    <h4 className="font-medium text-sm">Critical Balance Factors</h4>
-                  </div>
-                  <div className="p-3">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div className="space-y-1.5">
-                        <h5 className="font-medium text-sm">Trust vs. Enforcement</h5>
-                        <p className="text-sm">
-                          Finding the right balance between aggressive enforcement and community trust is crucial. 
-                          While high police presence can reduce crime in the short term, it may damage community 
-                          relationships, leading to less cooperation and higher crime in the long term.
-                        </p>
-                      </div>
-                      
-                      <div className="space-y-1.5">
-                        <h5 className="font-medium text-sm">Technology vs. Community Engagement</h5>
-                        <p className="text-sm">
-                          Technological solutions (CCTV, facial recognition) can be effective crime-fighting tools but 
-                          may create civil liberties concerns. Community engagement approaches build lasting trust but 
-                          may take longer to impact crime rates.
-                        </p>
-                      </div>
-                      
-                      <div className="space-y-1.5">
-                        <h5 className="font-medium text-sm">Resource Allocation</h5>
-                        <p className="text-sm">
-                          Limited resources must be allocated strategically. This may mean addressing the highest-crime 
-                          areas first, but also being cognizant of equity concerns in different neighborhoods.
-                        </p>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <h5 className="font-medium text-sm">Technology Benefits vs. Disparate Impact</h5>
-                        <p className="text-sm">
-                          Technologies that increase efficiency must be weighed against their potential for unequal impact 
-                          across different demographic groups. What works in one neighborhood may cause harm in another due 
-                          to underlying social contexts and historical relationships with law enforcement.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Learning opportunity note - More compact with INCREASED font sizes */}
-                <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 p-3 rounded-md">
-                  <div className="flex items-start gap-2">
-                    <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5" />
-                    <div>
-                      <h3 className="font-medium mb-1 text-sm">Learning Opportunity</h3>
-                      <p className="text-sm">
-                        This simulation simplifies complex social issues but illustrates important trade-offs in policing. 
-                        Real-world policing involves many more variables and deeply embedded social factors. The way 
-                        technology is implemented matters as much as which technologies are chosen.
-                      </p>
+                        ))}
+                      </ul>
                     </div>
                   </div>
                 </div>
@@ -702,7 +551,7 @@ const GameResults: React.FC<{
                 <div className="flex justify-between">
                   <Button variant="outline" size="sm" onClick={() => setCurrentPage("metrics")} className="flex items-center gap-1">
                     <ArrowLeft className="h-3 w-3" />
-                    <span>Back to Performance Metrics</span>
+                    <span>Back to Performance</span>
                   </Button>
                   <Button size="sm" onClick={onReset} className="flex items-center gap-1">
                     <RefreshCcw className="h-3 w-3" />
