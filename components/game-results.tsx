@@ -26,10 +26,10 @@ const GameResults: React.FC<{
                     metrics.communityTrust.district3 + 
                     metrics.communityTrust.district4) / 4
 
-  const avgCrime = (Math.min(100, metrics.crimesReported.district1 / 5) +
-                    Math.min(100, metrics.crimesReported.district2 / 5) +
-                    Math.min(100, metrics.crimesReported.district3 / 5) +
-                    Math.min(100, metrics.crimesReported.district4 / 5)) / 4
+  const avgCrime = (Math.min(100, metrics.crimesReported.district1 / 2) +
+                    Math.min(100, metrics.crimesReported.district2 / 2) +
+                    Math.min(100, metrics.crimesReported.district3 / 2) +
+                    Math.min(100, metrics.crimesReported.district4 / 2)) / 4
 
   const avgFalseArrest = (metrics.falseArrestRate.district1 +
                           metrics.falseArrestRate.district2 +
@@ -99,9 +99,9 @@ const GameResults: React.FC<{
     {
       name: "Crime Rate",
       value: avgCrime.toFixed(1) + "%",
-      target: "< 40%",
-      achieved: avgCrime < 40,
-      color: avgCrime < 30 ? "bg-green-500" : avgCrime < 60 ? "bg-yellow-500" : "bg-red-500",
+      target: "< 50%",
+      achieved: avgCrime < 50,
+      color: avgCrime < 50 ? "bg-green-500" : avgCrime <= 100 ? "bg-yellow-500" : "bg-red-500",
       percentage: Math.min(100, avgCrime),
       description: "Average crime rate across all districts. Lower values reflect safer neighborhoods and more effective policing strategies.",
       improves: [
@@ -174,10 +174,12 @@ const GameResults: React.FC<{
       takeaways.push("Strong community trust improved crime reporting and police-community relations.")
     }
     
-    if (avgCrime < 30) {
-      takeaways.push("You successfully reduced crime across the city.")
-    } else if (avgCrime > 60) {
-      takeaways.push("Crime rates remained high, indicating need for better resource allocation.")
+    if (avgCrime < 50) {
+      takeaways.push("You successfully reduced crime to low levels across the city.")
+    } else if (avgCrime <= 100) {
+      takeaways.push("Crime remained at moderate levels, indicating potential for improved strategies.")
+    } else {
+      takeaways.push("Severe crime rates greatly impacted community safety and population growth.")
     }
     
     if (avgFalseArrest > 20) {

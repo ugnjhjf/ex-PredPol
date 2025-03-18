@@ -238,7 +238,7 @@ export default function GameSimulation() {
       // Add warning for critical conditions in early rounds
       if (isEarlyRound && isPriorityCrisisDistrict && 
           newMetrics.communityTrust[district] < 20 && 
-          newMetrics.crimesReported[district] > 90) {
+          newMetrics.crimesReported[district] > 100) {
         changes.push(`⚠️ CRITICAL: ${getDistrictName(district)} requires immediate attention - crime and trust have reached crisis levels`);
       }
     }
@@ -628,7 +628,7 @@ export default function GameSimulation() {
       let populationChangeReasons = [];
       
       // High crime rate causes more people to leave
-      if (newMetrics.crimesReported[district] > 80) { // Lower threshold
+      if (newMetrics.crimesReported[district] > 100) { // Lower threshold
         const crimePopulationLoss = Math.round(newMetrics.population[district] * 
           (newMetrics.crimesReported[district] > 150 ? 0.035 : 0.02)); // Up to 3.5% leave
         populationChange -= crimePopulationLoss;
@@ -652,7 +652,7 @@ export default function GameSimulation() {
       }
       
       // Safe district with high trust attracts people - stronger positive impact
-      if (newMetrics.crimesReported[district] < 40 && newMetrics.communityTrust[district] > 70) {
+      if (newMetrics.crimesReported[district] < 50 && newMetrics.communityTrust[district] > 70) {
         const attractedPopulation = Math.round(newMetrics.population[district] * 0.025); // 2.5% growth
         populationChange += attractedPopulation;
         populationChangeReasons.push(`improved conditions (+${attractedPopulation})`);
@@ -758,11 +758,7 @@ export default function GameSimulation() {
       // Add the game log entry before transitioning
       setGameLog(prevLog => [...prevLog, {
         round: currentRound,
-        specialEvents: [{
-          title: "BUDGET BANKRUPTCY",
-          message: "The city has run out of funds. Police operations terminated.",
-          type: "negative"
-        }],
+        specialEvents: [bankruptcyMessage],
         // ...other log properties from before
         budget: {
           previous: gameMetrics.budget,
@@ -843,7 +839,7 @@ export default function GameSimulation() {
 
     // Add critical feedback for urgent issues in early rounds
     if (currentRound <= 3) {
-      if (newMetrics.crimesReported.district3 > 90 && newMetrics.communityTrust.district3 < 20) {
+      if (newMetrics.crimesReported.district3 > 100 && newMetrics.communityTrust.district3 < 20) {
         feedback += "URGENT: South Side is in a state of crisis with extremely high crime and low trust. Immediate action required. ";
       }
       if (newMetrics.crimesReported.district4 > 70 && newMetrics.communityTrust.district4 < 40) {

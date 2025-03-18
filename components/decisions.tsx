@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { HelpCircle, Users, CheckCircle2, Sun, Moon, Shield, Info, UserCheck, Plus } from "lucide-react";
+import { HelpCircle, Users, CheckCircle2, Sun, Moon, Shield, Info, UserCheck, Plus, AlertTriangle } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
@@ -281,16 +281,31 @@ export default function CityMap({
     return "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200"
   }
 
+  // Updated crime color thresholds
   const getCrimeColor = (crimes) => {
-    if (crimes <= 100) return "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200"
-    if (crimes <= 200) return "bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200"
+    if (crimes <= 24) return "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200"
+    if (crimes <= 50) return "bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200"
     return "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200"
   }
 
+  // Helper function to get crime severity label - updated thresholds
+  const getCrimeSeverityLabel = (crimes) => {
+    if (crimes <= 24) return "Low"
+    if (crimes <= 50) return "Moderate"
+    return "High"
+  }
+
   const getFalseArrestColor = (rate) => {
-    if (rate <= 10) return "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200"
-    if (rate <= 20) return "bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200"
+    if (rate < 5) return "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200"
+    if (rate <= 10) return "bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200"
     return "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200"
+  }
+
+  // Helper function for false arrest severity label
+  const getFalseArrestSeverityLabel = (rate) => {
+    if (rate < 5) return "Good"
+    if (rate <= 10) return "Medium"
+    return "High"
   }
 
   // Add info tooltips about district-specific shift effectiveness
@@ -306,6 +321,69 @@ export default function CityMap({
         return "Eastside has more evening and night crime. Day shift is 80% effective, night shift is 120% effective.";
       default:
         return "Shift effectiveness varies by district.";
+    }
+  };
+
+  // Helper function to check if a metric needs attention and provide tips
+  const getMetricWarningInfo = (district, metricType) => {
+    switch(metricType) {
+      case 'crime':
+        if (gameMetrics.crimesReported[district] > 50) {
+          return {
+            warning: true,
+            title: "Crime Rate", // Removed "High"
+            description: "Crime rate is at a concerning level in this district.",
+            tips: [
+              "Increase police presence, especially during high-crime hours",
+              "Consider implementing CCTV or crime reporting app",
+              "Balance day and night shifts based on crime patterns",
+              "Target specific areas where common crimes occur"
+            ]
+          };
+        }
+        return { warning: false };
+        
+      case 'falseArrest':
+        if (gameMetrics.falseArrestRate[district] > 10) {
+          return {
+            warning: true,
+            title: "False Arrest Rate", // Removed "High"
+            description: "False arrests are damaging community trust and may trigger protests.",
+            tips: [
+              "Implement community education programs",
+              "Avoid over-policing which creates pressure for arrests",
+              "Be cautious with facial recognition in diverse communities",
+              "Focus on quality evidence gathering rather than quantity of arrests"
+            ]
+          };
+        }
+        return { warning: false };
+        
+      case 'racialBias':
+        // Calculate a simple racial bias indicator (comparing arrest percentages to demographics)
+        const demographics = getDistrictDemographics(district);
+        const arrests = gameMetrics.arrestsByRace;
+        
+        // Check if Black arrest percentage is significantly higher than demographic percentage
+        const blackBias = arrests.black[district] - demographics.ethnicity.black;
+        
+        if (blackBias > 20) {
+          return {
+            warning: true,
+            title: "Potential Racial Bias", // This one was fine - already doesn't use "High"
+            description: "Arrests show significant demographic disparities compared to population.",
+            tips: [
+              "Implement community education and engagement",
+              "Avoid over-policing certain neighborhoods",
+              "Review and adjust patrol allocation practices",
+              "Consider anonymous reporting tools to reduce subjective enforcement"
+            ]
+          };
+        }
+        return { warning: false };
+        
+      default:
+        return { warning: false };
     }
   };
 
@@ -340,6 +418,11 @@ export default function CityMap({
           const districtImplementedActions = implementedActions[district] || [];
           const totalPolice = policeAllocation[district].day + policeAllocation[district].night;
           const hasSelectedAction = districtActions[district] !== "";
+          
+          // Get warning info for each metric
+          const crimeWarning = getMetricWarningInfo(district, 'crime');
+          const falseArrestWarning = getMetricWarningInfo(district, 'falseArrest');
+          const racialBiasWarning = getMetricWarningInfo(district, 'racialBias');
           
           return (
             <Card 
@@ -405,10 +488,43 @@ export default function CityMap({
                     <span className="font-bold text-sm">{gameMetrics.communityTrust[district]}%</span>
                   </div>
                   
-                  {/* Crimes Reported */}
+                  {/* Crimes Reported - Fix bullet points */}
                   <div className={`p-1.5 rounded flex flex-col items-center ${getCrimeColor(gameMetrics.crimesReported[district])}`}>
-                    <span>Crimes</span>
-                    <span className="font-bold text-sm">{gameMetrics.crimesReported[district]}</span>
+                    <div className="flex items-center gap-1">
+                      <span>Crimes</span>
+                      {crimeWarning.warning && (
+                        <Popover>
+                          <PopoverTrigger>
+                            <AlertTriangle 
+                              className="h-3 w-3 text-red-600 dark:text-red-400 cursor-help" 
+                            />
+                          </PopoverTrigger>
+                          <PopoverContent className="w-64 p-2.5">
+                            <div className="space-y-1.5">
+                              <h4 className="font-medium text-sm flex items-center gap-1.5">
+                                <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                                {crimeWarning.title}
+                              </h4>
+                              <p className="text-xs">{crimeWarning.description}</p>
+                              <div className="pt-0.5">
+                                <p className="text-[10px] font-medium mb-0.5">Tips:</p>
+                                <ul className="text-[9px] space-y-0.5 pl-4">
+                                  {crimeWarning.tips.map((tip, i) => (
+                                    <li key={i} className="flex items-start">
+                                      <span className="text-primary inline-block mr-1.5 ml-[-1rem]">•</span>
+                                      <span>{tip}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                      )}
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <span className="font-bold text-sm">{gameMetrics.crimesReported[district]}</span>
+                    </div>
                   </div>
                   
                   {/* Suspects Arrested */}
@@ -417,10 +533,43 @@ export default function CityMap({
                     <span className="font-bold text-sm">{gameMetrics.arrests?.[district] || 0}</span>
                   </div>
                   
-                  {/* False Arrest Rate */}
+                  {/* False Arrest Rate - Fix bullet points */}
                   <div className={`p-1.5 rounded flex flex-col items-center ${getFalseArrestColor(gameMetrics.falseArrestRate[district])}`}>
-                    <span>False Arrests</span>
+                    <div className="flex items-center gap-1">
+                      <span>False Arrests</span>
+                      {falseArrestWarning.warning && (
+                        <Popover>
+                          <PopoverTrigger>
+                            <AlertTriangle 
+                              className="h-3 w-3 text-red-600 dark:text-red-400 cursor-help" 
+                            />
+                          </PopoverTrigger>
+                          <PopoverContent className="w-64 p-2.5">
+                            <div className="space-y-1.5">
+                              <h4 className="font-medium text-sm flex items-center gap-1.5">
+                                <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                                {falseArrestWarning.title}
+                              </h4>
+                              <p className="text-xs">{falseArrestWarning.description}</p>
+                              <div className="pt-0.5">
+                                <p className="text-[10px] font-medium mb-0.5">Tips:</p>
+                                <ul className="text-[9px] space-y-0.5 pl-4">
+                                  {falseArrestWarning.tips.map((tip, i) => (
+                                    <li key={i} className="flex items-start">
+                                      <span className="text-primary inline-block mr-1.5 ml-[-1rem]">•</span>
+                                      <span>{tip}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                      )}
+                    </div>
                     <span className="font-bold text-sm">{gameMetrics.falseArrestRate[district]}%</span>
+
+                    
                   </div>
                 </div>
                 
@@ -448,11 +597,19 @@ export default function CityMap({
                         </div>
                       </div>
                       
-                      {/* Day shift with sun icon */}
+                      {/* Day shift with sun icon - Added effectiveness info popover */}
                       <div className="flex justify-between items-center">
                         <div className="flex items-center">
                           <Sun className="h-3 w-3 mr-1 text-amber-500" />
                           <label className="text-xs">Day Shift:</label>
+                          <Popover>
+                            <PopoverTrigger>
+                              <Info className="h-3 w-3 ml-1 text-muted-foreground cursor-help" />
+                            </PopoverTrigger>
+                            <PopoverContent side="right" className="p-2 text-xs w-60">
+                              {getShiftEffectivenessInfo(district)}
+                            </PopoverContent>
+                          </Popover>
                         </div>
                         <div className="flex space-x-1 items-center">
                           <Button 
@@ -481,11 +638,19 @@ export default function CityMap({
                         </div>
                       </div>
                       
-                      {/* Night shift with moon icon */}
+                      {/* Night shift with moon icon - Added effectiveness info popover */}
                       <div className="flex justify-between items-center">
                         <div className="flex items-center">
                           <Moon className="h-3 w-3 mr-1 text-indigo-400" />
                           <label className="text-xs">Night Shift:</label>
+                          <Popover>
+                            <PopoverTrigger>
+                              <Info className="h-3 w-3 ml-1 text-muted-foreground cursor-help" />
+                            </PopoverTrigger>
+                            <PopoverContent side="right" className="p-2 text-xs w-60">
+                              {getShiftEffectivenessInfo(district)}
+                            </PopoverContent>
+                          </Popover>
                         </div>
                         <div className="flex space-x-1 items-center">
                           <Button 
@@ -514,15 +679,7 @@ export default function CityMap({
                         </div>
                       </div>
                       
-                      {/* Shift effectiveness info */}
-                      <div className="pt-1 text-[10px] text-muted-foreground italic">
-                        <Popover>
-                          <PopoverTrigger className="underline cursor-help">Shift effectiveness info</PopoverTrigger>
-                          <PopoverContent side="bottom" className="p-2 text-xs w-60">
-                            {getShiftEffectivenessInfo(district)}
-                          </PopoverContent>
-                        </Popover>
-                      </div>
+                      {/* Removed the separate shift effectiveness info section that was here */}
                     </div>
 
                     {/* Common crimes */}
@@ -540,7 +697,40 @@ export default function CityMap({
                   <div className="space-y-2">                    
                     {/* Demographics with pie charts */}
                     <div className="space-y-1">
-                      <h5 className="text-xs font-medium">Demographics</h5>
+                      <div className="flex items-center">
+                        <h5 className="text-xs font-medium">Demographics</h5>
+                        {/* Racial bias warning with fixed bullet points */}
+                        {racialBiasWarning.warning && (
+                          <Popover>
+                            <PopoverTrigger>
+                              <AlertTriangle 
+                                className="h-3 w-3 ml-1.5 text-red-600 dark:text-red-400 cursor-help" 
+                              />
+                            </PopoverTrigger>
+                            <PopoverContent className="w-64 p-2.5">
+                              <div className="space-y-1.5">
+                                <h4 className="font-medium text-sm flex items-center gap-1.5">
+                                  <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                                  {racialBiasWarning.title}
+                                </h4>
+                                <p className="text-xs">{racialBiasWarning.description}</p>
+                                <div className="pt-0.5">
+                                  <p className="text-[10px] font-medium mb-0.5">Tips:</p>
+                                  <ul className="text-[9px] space-y-0.5 pl-4">
+                                    {racialBiasWarning.tips.map((tip, i) => (
+                                      <li key={i} className="flex items-start">
+                                        <span className="text-primary inline-block mr-1.5 ml-[-1rem]">•</span>
+                                        <span>{tip}</span>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              </div>
+                            </PopoverContent>
+                          </Popover>
+                        )}
+                      </div>
+                      
                       <div className="grid grid-cols-2 gap-2 bg-muted/30 p-2 rounded">
                         {/* Ethnicity pie chart */}
                         <div>

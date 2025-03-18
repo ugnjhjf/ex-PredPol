@@ -131,6 +131,15 @@ export default function OverallMetrics({ gameMetrics, currentRound }) {
     return "text-red-600 dark:text-red-400"
   }
   
+  // Updated crime rate thresholds
+  const getCrimeColor = (totalCrimes) => {
+    // Scale the total crime by district count for a more accurate assessment
+    const avgCrimePerDistrict = totalCrimes / 4;
+    if (avgCrimePerDistrict < 50) return "text-green-600 dark:text-green-400"
+    if (avgCrimePerDistrict <= 100) return "text-yellow-600 dark:text-yellow-400" 
+    return "text-red-600 dark:text-red-400"
+  }
+  
   const getFalseArrestColor = (rate) => {
     if (rate <= 10) return "text-green-600 dark:text-green-400"
     if (rate <= 20) return "text-yellow-600 dark:text-yellow-400"
@@ -190,7 +199,7 @@ export default function OverallMetrics({ gameMetrics, currentRound }) {
             </div>
           </div>
                     
-          {/* Crimes Reported Metric */}
+          {/* Crimes Reported Metric - Updated with severity label */}
           <div className="flex items-center gap-3">
             <div className="bg-red-100 dark:bg-red-900 rounded-full p-2">
               <FileBarChart className="h-6 w-6 text-red-600 dark:text-red-300" />
@@ -204,13 +213,18 @@ export default function OverallMetrics({ gameMetrics, currentRound }) {
                     </h3>
                   </PopoverTrigger>
                   <PopoverContent side="top" className="text-sm w-80">
-                    <p>Total number of crimes reported across all districts.</p>
+                    <p>Total number of crimes reported across all districts. Under 50/district is low, 50-100 is moderate, over 100 is severe.</p>
                   </PopoverContent>
                 </Popover>
               </div>
               <div className="flex items-center">
-                <span className="text-base font-bold">
+                <span className={`text-base font-bold ${getCrimeColor(totalCrimes)}`}>
                   {totalCrimes}
+                </span>
+                <span className="text-xs ml-1 text-muted-foreground">
+                  {(totalCrimes/4) < 50 ? "(Low)" : 
+                   (totalCrimes/4) <= 100 ? "(Moderate)" : 
+                   "(Severe)"}
                 </span>
                 {crimesChange !== 0 && (
                   <div className={`flex items-center gap-0.5 text-xs ml-1 ${crimesChange < 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>

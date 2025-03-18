@@ -118,16 +118,31 @@ export default function DistrictMetrics({ gameMetrics, getDistrictName }) {
     return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100"
   }
 
+  // Updated crime color thresholds
   const getCrimeColor = (crime) => {
-    if (crime <= 30) return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
-    if (crime <= 60) return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100"
+    if (crime <= 24) return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
+    if (crime <= 50) return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100"
     return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100"
   }
 
+  // Helper for crime severity label - updated thresholds
+  const getCrimeSeverityLabel = (crime) => {
+    if (crime <= 24) return "Low"
+    if (crime <= 50) return "Moderate"
+    return "High"
+  }
+
   const getFalseArrestColor = (rate) => {
-    if (rate <= 10) return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
-    if (rate <= 20) return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100"
+    if (rate < 5) return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
+    if (rate <= 10) return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100"
     return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100"
+  }
+
+  // Helper for false arrest severity label
+  const getFalseArrestSeverityLabel = (rate) => {
+    if (rate < 5) return "Good"
+    if (rate <= 10) return "Medium"
+    return "High"
   }
 
   return (
@@ -161,13 +176,13 @@ export default function DistrictMetrics({ gameMetrics, getDistrictName }) {
                   </Popover>
                 </div>
                 
-                {/* Crime metric with info icon */}
+                {/* Crime metric with info icon - updated with severity */}
                 <div className="flex items-center">
                   <Badge 
                     variant="outline" 
                     className={`px-2 py-0.5 text-xs font-medium ${getCrimeColor(gameMetrics.crimeRate[district])}`}
                   >
-                    Crime: {gameMetrics.crimeRate[district]}%
+                    Crime: {gameMetrics.crimeRate[district]}% ({getCrimeSeverityLabel(gameMetrics.crimeRate[district])})
                   </Badge>
                   <Popover>
                     <PopoverTrigger>
@@ -175,19 +190,19 @@ export default function DistrictMetrics({ gameMetrics, getDistrictName }) {
                     </PopoverTrigger>
                     <PopoverContent className="w-64 p-2">
                       <p className="text-xs">
-                        Percentage of criminal activity in the district. Lower is better.
+                        Crime level in the district. 0-24 is low, 25-50 is moderate, 51+ is high and negatively impacts population.
                       </p>
                     </PopoverContent>
                   </Popover>
                 </div>
                 
-                {/* False Arrests metric with info icon */}
+                {/* False Arrests metric with info icon - updated with new thresholds */}
                 <div className="flex items-center">
                   <Badge 
                     variant="outline" 
                     className={`px-2 py-0.5 text-xs font-medium ${getFalseArrestColor(gameMetrics.falseArrestRate[district])}`}
                   >
-                    F.A.R.: {gameMetrics.falseArrestRate[district]}%
+                    F.A.R.: {gameMetrics.falseArrestRate[district]}% ({getFalseArrestSeverityLabel(gameMetrics.falseArrestRate[district])})
                   </Badge>
                   <Popover>
                     <PopoverTrigger>
@@ -195,7 +210,7 @@ export default function DistrictMetrics({ gameMetrics, getDistrictName }) {
                     </PopoverTrigger>
                     <PopoverContent className="w-64 p-2">
                       <p className="text-xs">
-                        False Arrest Rate - percentage of arrests involving innocent individuals. Lower values indicate more accurate policing.
+                        False Arrest Rate - below 5% is good, 5-10% is medium, above 10% is high and may trigger protests or community backlash.
                       </p>
                     </PopoverContent>
                   </Popover>

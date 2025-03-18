@@ -306,9 +306,11 @@ export default function ActionSelection({
       case 'trust':
         return value >= 70 ? "bg-green-500" : value >= 40 ? "bg-yellow-500" : "bg-red-500";
       case 'crime':
-        return value <= 30 ? "bg-green-500" : value <= 60 ? "bg-yellow-500" : "bg-red-500";
+        return value <= 24 ? "bg-green-500" : value <= 50 ? "bg-yellow-500" : "bg-red-500";
       case 'falseArrest':
-        return value <= 10 ? "bg-green-500" : value <= 20 ? "bg-yellow-500" : "bg-red-500";
+        return value < 5 ? "bg-green-500" : value <= 10 ? "bg-yellow-500" : "bg-red-500";
+      case 'arrests':
+        return value >= 70 ? "bg-green-500" : value >= 40 ? "bg-yellow-500" : "bg-red-500";
       default:
         return "bg-gray-500";
     }
@@ -321,15 +323,28 @@ export default function ActionSelection({
   }
 
   const getCrimeColor = (crimes) => {
-    if (crimes <= 100) return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
-    if (crimes <= 200) return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100"
+    if (crimes <= 24) return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
+    if (crimes <= 50) return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100"
     return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100"
   }
 
   const getFalseArrestColor = (rate) => {
-    if (rate <= 10) return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
-    if (rate <= 20) return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100"
+    if (rate < 5) return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
+    if (rate <= 10) return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100"
     return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100"
+  }
+
+  // Helper functions for severity labels
+  const getCrimeSeverityLabel = (crimes) => {
+    if (crimes <= 24) return "Low"
+    if (crimes <= 50) return "Moderate"
+    return "High"
+  }
+
+  const getFalseArrestSeverityLabel = (rate) => {
+    if (rate < 5) return "Good"
+    if (rate <= 10) return "Medium"
+    return "High"
   }
 
   return (
@@ -388,11 +403,13 @@ export default function ActionSelection({
                               variant="outline" 
                               className={`px-1 py-0 text-[10px] ${getCrimeColor(gameMetrics.crimesReported[district])} cursor-help`}
                             >
-                              Crimes: {gameMetrics.crimesReported[district]}
+                              Crimes: {gameMetrics.crimesReported[district]} 
+                              {gameMetrics.crimesReported[district] <= 24 ? " (Low)" : 
+                                gameMetrics.crimesReported[district] <= 50 ? " (Mod)" : " (High)"}
                             </Badge>
                           </PopoverTrigger>
                           <PopoverContent side="top" className="w-64 p-2 text-xs">
-                            <p>Number of crimes reported in the district. Lower values indicate safer neighborhoods.</p>
+                            <p>Number of crimes reported in the district. 0-24 is low, 25-50 is moderate, 51+ is high.</p>
                           </PopoverContent>
                         </Popover>
                         
@@ -404,10 +421,12 @@ export default function ActionSelection({
                               className={`px-1 py-0 text-[10px] ${getFalseArrestColor(gameMetrics.falseArrestRate[district])} cursor-help`}
                             >
                               F.A.: {gameMetrics.falseArrestRate[district]}%
+                              {gameMetrics.falseArrestRate[district] < 5 ? " (Good)" : 
+                                gameMetrics.falseArrestRate[district] <= 10 ? " (Med)" : " (High)"}
                             </Badge>
                           </PopoverTrigger>
                           <PopoverContent side="top" className="w-64 p-2 text-xs">
-                            <p>Percentage of arrests that involve innocent individuals. Lower values indicate more accurate policing.</p>
+                            <p>Percentage of arrests that involve innocent individuals. Below 5% is good, 5-10% is medium, above 10% is high and may trigger community protests.</p>
                           </PopoverContent>
                         </Popover>
                       </div>
@@ -538,6 +557,14 @@ export default function ActionSelection({
                           Action selected
                         </span>
                       ) : null}
+
+                      {/* Add alert for high false arrest rate */}
+                      {gameMetrics.falseArrestRate[district] > 10 && (
+                        <div className="mt-1 text-[10px] bg-red-50 dark:bg-red-900/30 text-red-800 dark:text-red-200 p-1 rounded border border-red-200 dark:border-red-800 flex items-center">
+                          <span className="font-bold mr-1">Warning:</span> 
+                          <span>High false arrest rate may trigger community protests and decreased trust!</span>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>

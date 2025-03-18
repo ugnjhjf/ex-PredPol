@@ -58,30 +58,45 @@ export function RoundSummary({ currentRound, gameMetrics, roundSummary, getDistr
     return "text-red-600 dark:text-red-400"
   }
 
+  // Updated crime color thresholds
   const getCrimeColor = (crime) => {
-    if (crime <= 30) return "text-green-600 dark:text-green-400"
-    if (crime <= 60) return "text-yellow-600 dark:text-yellow-400"
+    if (crime <= 24) return "text-green-600 dark:text-green-400"
+    if (crime <= 50) return "text-yellow-600 dark:text-yellow-400"
     return "text-red-600 dark:text-red-400"
   }
 
   const getFalseArrestColor = (rate) => {
-    if (rate <= 10) return "text-green-600 dark:text-green-400"
-    if (rate <= 20) return "text-yellow-600 dark:text-yellow-400"
+    if (rate < 5) return "text-green-600 dark:text-green-400"
+    if (rate <= 10) return "text-yellow-600 dark:text-yellow-400"
     return "text-red-600 dark:text-red-400"
   }
 
-  // Get bar color for metrics
+  // Get bar color for metrics - update crime thresholds
   const getBarColor = (metric, value) => {
     switch(metric) {
       case 'trust':
         return value >= 70 ? "bg-green-500" : value >= 40 ? "bg-yellow-500" : "bg-red-500";
       case 'crime':
-        return value <= 30 ? "bg-green-500" : value <= 60 ? "bg-yellow-500" : "bg-red-500";
+        return value <= 24 ? "bg-green-500" : value <= 50 ? "bg-yellow-500" : "bg-red-500";
       case 'falseArrest':
-        return value <= 10 ? "bg-green-500" : value <= 20 ? "bg-yellow-500" : "bg-red-500";
+        return value < 5 ? "bg-green-500" : value <= 10 ? "bg-yellow-500" : "bg-red-500";
       default:
         return "bg-gray-500";
     }
+  }
+
+  // Helper function to get crime severity label
+  const getCrimeSeverityLabel = (crime) => {
+    if (crime <= 24) return "Low"
+    if (crime <= 50) return "Moderate"
+    return "High"
+  }
+
+  // Helper function to get false arrest severity label
+  const getFalseArrestSeverityLabel = (rate) => {
+    if (rate < 5) return "Good"
+    if (rate <= 10) return "Medium"
+    return "High"
   }
 
   // Format change with arrow and color
@@ -249,7 +264,7 @@ export function RoundSummary({ currentRound, gameMetrics, roundSummary, getDistr
                     </div>
                   </div>
                   
-                  {/* Crimes metric with emoji */}
+                  {/* Crimes metric with emoji - updated with severity label */}
                   <div className="space-y-1">
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-1">
@@ -257,26 +272,29 @@ export function RoundSummary({ currentRound, gameMetrics, roundSummary, getDistr
                         <Popover>
                           <PopoverTrigger className="text-[10px] cursor-help">Crimes Reported:</PopoverTrigger>
                           <PopoverContent className="w-60 p-2 text-xs">
-                            Number of crimes reported in this district. Lower values reflect safer neighborhoods.
+                            Number of crimes reported in this district. 0-24 is low, 25-50 is moderate, 51+ is high.
                           </PopoverContent>
                         </Popover>
                       </div>
                       <div className="flex items-center">
-                        <span className={`text-xs font-medium ${getCrimeColor(Math.min(100, gameMetrics.crimesReported[district]/5))}`}>
-                          {gameMetrics.crimesReported[district]}
-                        </span>
-                        {roundSummary.metricChanges?.[district]?.crimes && 
-                          formatChange(
-                            roundSummary.metricChanges[district].crimes,
-                            roundSummary.metricChanges[district].crimes < 0
-                          )
-                        }
+                        <div className="flex flex-col items-end">
+                          <span className={`text-xs font-medium ${getCrimeColor(gameMetrics.crimesReported[district])}`}>
+                            {gameMetrics.crimesReported[district]} 
+                            <span className="text-[9px] ml-0.5">({getCrimeSeverityLabel(gameMetrics.crimesReported[district])})</span>
+                          </span>
+                          {roundSummary.metricChanges?.[district]?.crimes && 
+                            formatChange(
+                              roundSummary.metricChanges[district].crimes,
+                              roundSummary.metricChanges[district].crimes < 0
+                            )
+                          }
+                        </div>
                       </div>
                     </div>
                     <div className="w-full h-1 bg-muted rounded-full overflow-hidden">
                       <div 
-                        className={getBarColor('crime', Math.min(100, gameMetrics.crimesReported[district]/5))} 
-                        style={{ width: `${Math.min(100, gameMetrics.crimesReported[district]/3)}%`, height: '100%' }}
+                        className={getBarColor('crime', gameMetrics.crimesReported[district])} 
+                        style={{ width: `${Math.min(100, gameMetrics.crimesReported[district]/1.5)}%`, height: '100%' }}
                       ></div>
                     </div>
                   </div>
@@ -313,13 +331,14 @@ export function RoundSummary({ currentRound, gameMetrics, roundSummary, getDistr
                         <Popover>
                           <PopoverTrigger className="text-[10px] cursor-help">False Arrests:</PopoverTrigger>
                           <PopoverContent className="w-60 p-2 text-xs">
-                            Percentage of arrests involving innocent individuals. Lower rates indicate more precise and fair policing.
+                            Percentage of arrests involving innocent individuals. Below 5% is good, 5-10% is medium, above 10% is high and may trigger protests.
                           </PopoverContent>
                         </Popover>
                       </div>
                       <div className="flex items-center">
                         <span className={`text-xs font-medium ${getFalseArrestColor(gameMetrics.falseArrestRate[district])}`}>
                           {gameMetrics.falseArrestRate[district]}%
+                          <span className="text-[9px] ml-0.5">({getFalseArrestSeverityLabel(gameMetrics.falseArrestRate[district])})</span>
                         </span>
                         {roundSummary.metricChanges?.[district]?.falseArrest && 
                           formatChange(
@@ -332,7 +351,7 @@ export function RoundSummary({ currentRound, gameMetrics, roundSummary, getDistr
                     <div className="w-full h-1 bg-muted rounded-full overflow-hidden">
                       <div 
                         className={getBarColor('falseArrest', gameMetrics.falseArrestRate[district])} 
-                        style={{ width: `${gameMetrics.falseArrestRate[district]*2}%`, height: '100%' }}
+                        style={{ width: `${gameMetrics.falseArrestRate[district] * 5}%`, height: '100%' }}
                       ></div>
                     </div>
                   </div>
