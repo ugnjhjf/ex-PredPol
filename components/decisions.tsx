@@ -11,6 +11,104 @@ import { useToast } from "@/components/ui/use-toast";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 
+// EXTRACTED COMPONENT 1: WarningTooltip - reusable warning tooltip with tips
+const WarningTooltip = ({ title, description, tips }) => (
+  <Popover>
+    <PopoverTrigger>
+      <AlertTriangle className="h-3 w-3 text-red-600 dark:text-red-400 cursor-help" />
+    </PopoverTrigger>
+    <PopoverContent className="w-64 p-2.5">
+      <div className="space-y-1.5">
+        <h4 className="font-medium text-sm flex items-center gap-1.5">
+          <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
+          {title}
+        </h4>
+        <p className="text-xs">{description}</p>
+        <div className="pt-0.5">
+          <p className="text-[10px] font-medium mb-0.5">Tips:</p>
+          <ul className="text-[9px] space-y-0.5 pl-4">
+            {tips.map((tip, i) => (
+              <li key={i} className="flex items-start">
+                <span className="text-primary inline-block mr-1.5 ml-[-1rem]">•</span>
+                <span>{tip}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </PopoverContent>
+  </Popover>
+);
+
+// EXTRACTED COMPONENT 2: ShiftControl - reusable shift control component
+const ShiftControl = ({ 
+  type, 
+  icon: Icon, 
+  iconColor, 
+  district, 
+  policeAllocation, 
+  handlePoliceAllocation,
+  getShiftEffectivenessInfo 
+}) => (
+  <div className="flex justify-between items-center">
+    <div className="flex items-center">
+      <Icon className={`h-3 w-3 mr-1 ${iconColor}`} />
+      <label className="text-xs">{type} Shift:</label>
+      <Popover>
+        <PopoverTrigger>
+          <Info className="h-3 w-3 ml-1 text-muted-foreground cursor-help" />
+        </PopoverTrigger>
+        <PopoverContent side="right" className="p-2 text-xs w-60">
+          {getShiftEffectivenessInfo(district)}
+        </PopoverContent>
+      </Popover>
+    </div>
+    <div className="flex space-x-1 items-center">
+      <Button 
+        variant="outline" 
+        size="sm" 
+        className="h-5 w-5 p-0 text-xs"
+        onClick={() => {
+          if (policeAllocation[district][type.toLowerCase()] > 1) {
+            handlePoliceAllocation(district, type.toLowerCase(), policeAllocation[district][type.toLowerCase()] - 1)
+          }
+        }}
+        disabled={policeAllocation[district][type.toLowerCase()] <= 1}
+      >
+        -
+      </Button>
+      <span className="w-4 text-center text-xs">{policeAllocation[district][type.toLowerCase()]}</span>
+      <Button 
+        variant="outline" 
+        size="sm" 
+        className="h-5 w-5 p-0 text-xs"
+        onClick={() => handlePoliceAllocation(district, type.toLowerCase(), policeAllocation[district][type.toLowerCase()] + 1)}
+        disabled={policeAllocation.unallocated <= 0}
+      >
+        +
+      </Button>
+    </div>
+  </div>
+);
+
+// NEW EXTRACTED COMPONENT 3: MetricItem - reusable metric display component
+const MetricItem = ({ 
+  title, 
+  value, 
+  colorClass, 
+  children = null 
+}) => (
+  <div className={`p-1.5 rounded flex flex-col items-center ${colorClass}`}>
+    <div className="flex items-center gap-1">
+      <span>{title}</span>
+      {children}
+    </div>
+    {typeof value === 'object' ? 
+      value : 
+      <span className="font-bold text-sm">{value}</span>}
+  </div>
+);
+
 export default function CityMap({ 
   policeAllocation, 
   handlePoliceAllocation, 
@@ -476,101 +574,48 @@ export default function CityMap({
               <CardContent className="p-3">
                 {/* 5 key metrics at the top in grid layout */}
                 <div className="grid grid-cols-5 gap-1.5 text-xs mb-3">
-                  {/* Population */}
-                  <div className="p-1.5 rounded flex flex-col items-center bg-violet-100 dark:bg-violet-900 text-violet-800 dark:text-violet-200">
-                    <span>Population</span>
-                    <span className="font-bold text-sm">{gameMetrics.population[district].toLocaleString()}</span>
-                  </div>
+                  {/* Population - Using MetricItem */}
+                  <MetricItem 
+                    title="Population" 
+                    value={gameMetrics.population[district].toLocaleString()} 
+                    colorClass="bg-violet-100 dark:bg-violet-900 text-violet-800 dark:text-violet-200" 
+                  />
                   
-                  {/* Community Trust */}
-                  <div className={`p-1.5 rounded flex flex-col items-center ${getTrustColor(gameMetrics.communityTrust[district])}`}>
-                    <span>Trust</span>
-                    <span className="font-bold text-sm">{gameMetrics.communityTrust[district]}%</span>
-                  </div>
+                  {/* Community Trust - Using MetricItem */}
+                  <MetricItem 
+                    title="Trust" 
+                    value={`${gameMetrics.communityTrust[district]}%`} 
+                    colorClass={getTrustColor(gameMetrics.communityTrust[district])} 
+                  />
                   
-                  {/* Crimes Reported - Fix bullet points */}
-                  <div className={`p-1.5 rounded flex flex-col items-center ${getCrimeColor(gameMetrics.crimesReported[district])}`}>
-                    <div className="flex items-center gap-1">
-                      <span>Crimes</span>
-                      {crimeWarning.warning && (
-                        <Popover>
-                          <PopoverTrigger>
-                            <AlertTriangle 
-                              className="h-3 w-3 text-red-600 dark:text-red-400 cursor-help" 
-                            />
-                          </PopoverTrigger>
-                          <PopoverContent className="w-64 p-2.5">
-                            <div className="space-y-1.5">
-                              <h4 className="font-medium text-sm flex items-center gap-1.5">
-                                <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
-                                {crimeWarning.title}
-                              </h4>
-                              <p className="text-xs">{crimeWarning.description}</p>
-                              <div className="pt-0.5">
-                                <p className="text-[10px] font-medium mb-0.5">Tips:</p>
-                                <ul className="text-[9px] space-y-0.5 pl-4">
-                                  {crimeWarning.tips.map((tip, i) => (
-                                    <li key={i} className="flex items-start">
-                                      <span className="text-primary inline-block mr-1.5 ml-[-1rem]">•</span>
-                                      <span>{tip}</span>
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            </div>
-                          </PopoverContent>
-                        </Popover>
-                      )}
-                    </div>
-                    <div className="flex flex-col items-center">
-                      <span className="font-bold text-sm">{gameMetrics.crimesReported[district]}</span>
-                    </div>
-                  </div>
+                  {/* Crimes Reported - Using MetricItem with tooltip */}
+                  <MetricItem 
+                    title="Crimes" 
+                    value={
+                      <div className="flex flex-col items-center">
+                        <span className="font-bold text-sm">{gameMetrics.crimesReported[district]}</span>
+                      </div>
+                    } 
+                    colorClass={getCrimeColor(gameMetrics.crimesReported[district])}
+                  >
+                    {crimeWarning.warning && <WarningTooltip {...crimeWarning} />}
+                  </MetricItem>
                   
-                  {/* Suspects Arrested */}
-                  <div className="p-1.5 rounded flex flex-col items-center bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
-                    <span>Arrests</span>
-                    <span className="font-bold text-sm">{gameMetrics.arrests?.[district] || 0}</span>
-                  </div>
+                  {/* Suspects Arrested - Using MetricItem */}
+                  <MetricItem 
+                    title="Arrests" 
+                    value={gameMetrics.arrests?.[district] || 0} 
+                    colorClass="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200" 
+                  />
                   
-                  {/* False Arrest Rate - Fix bullet points */}
-                  <div className={`p-1.5 rounded flex flex-col items-center ${getFalseArrestColor(gameMetrics.falseArrestRate[district])}`}>
-                    <div className="flex items-center gap-1">
-                      <span>False Arrests</span>
-                      {falseArrestWarning.warning && (
-                        <Popover>
-                          <PopoverTrigger>
-                            <AlertTriangle 
-                              className="h-3 w-3 text-red-600 dark:text-red-400 cursor-help" 
-                            />
-                          </PopoverTrigger>
-                          <PopoverContent className="w-64 p-2.5">
-                            <div className="space-y-1.5">
-                              <h4 className="font-medium text-sm flex items-center gap-1.5">
-                                <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
-                                {falseArrestWarning.title}
-                              </h4>
-                              <p className="text-xs">{falseArrestWarning.description}</p>
-                              <div className="pt-0.5">
-                                <p className="text-[10px] font-medium mb-0.5">Tips:</p>
-                                <ul className="text-[9px] space-y-0.5 pl-4">
-                                  {falseArrestWarning.tips.map((tip, i) => (
-                                    <li key={i} className="flex items-start">
-                                      <span className="text-primary inline-block mr-1.5 ml-[-1rem]">•</span>
-                                      <span>{tip}</span>
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            </div>
-                          </PopoverContent>
-                        </Popover>
-                      )}
-                    </div>
-                    <span className="font-bold text-sm">{gameMetrics.falseArrestRate[district]}%</span>
-
-                    
-                  </div>
+                  {/* False Arrest Rate - Using MetricItem with tooltip */}
+                  <MetricItem 
+                    title="False Arrests" 
+                    value={`${gameMetrics.falseArrestRate[district]}%`} 
+                    colorClass={getFalseArrestColor(gameMetrics.falseArrestRate[district])}
+                  >
+                    {falseArrestWarning.warning && <WarningTooltip {...falseArrestWarning} />}
+                  </MetricItem>
                 </div>
                 
                 {/* Remaining content in two columns */}
@@ -578,7 +623,6 @@ export default function CityMap({
                   {/* Left column: Community trust and police allocation */}
                   <div className="space-y-2">
                     {/* Community Trust */}
-
                     
                     {/* Police allocation controls */}
                     <div className="bg-muted/40 p-2 rounded space-y-2">
@@ -591,95 +635,31 @@ export default function CityMap({
                           {totalPolice > 7 && (
                             <Badge variant="destructive" className="text-[10px] px-1.5 py-0">Over-policed</Badge>
                           )}
-                          {totalPolice < 3 && (
-                            <Badge variant="outline" className="text-[10px] px-1.5 py-0">Under-policed</Badge>
-                          )}
+                          
                         </div>
                       </div>
                       
-                      {/* Day shift with sun icon - Added effectiveness info popover */}
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center">
-                          <Sun className="h-3 w-3 mr-1 text-amber-500" />
-                          <label className="text-xs">Day Shift:</label>
-                          <Popover>
-                            <PopoverTrigger>
-                              <Info className="h-3 w-3 ml-1 text-muted-foreground cursor-help" />
-                            </PopoverTrigger>
-                            <PopoverContent side="right" className="p-2 text-xs w-60">
-                              {getShiftEffectivenessInfo(district)}
-                            </PopoverContent>
-                          </Popover>
-                        </div>
-                        <div className="flex space-x-1 items-center">
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="h-5 w-5 p-0 text-xs"
-                            onClick={() => {
-                              if (policeAllocation[district].day > 1) {
-                                handlePoliceAllocation(district, "day", policeAllocation[district].day - 1)
-                              }
-                            }}
-                            disabled={policeAllocation[district].day <= 1}
-                          >
-                            -
-                          </Button>
-                          <span className="w-4 text-center text-xs">{policeAllocation[district].day}</span>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="h-5 w-5 p-0 text-xs"
-                            onClick={() => handlePoliceAllocation(district, "day", policeAllocation[district].day + 1)}
-                            disabled={policeAllocation.unallocated <= 0}
-                          >
-                            +
-                          </Button>
-                        </div>
-                      </div>
+                      {/* Using ShiftControl component for day shift */}
+                      <ShiftControl 
+                        type="Day" 
+                        icon={Sun} 
+                        iconColor="text-amber-500" 
+                        district={district} 
+                        policeAllocation={policeAllocation} 
+                        handlePoliceAllocation={handlePoliceAllocation}
+                        getShiftEffectivenessInfo={getShiftEffectivenessInfo}
+                      />
                       
-                      {/* Night shift with moon icon - Added effectiveness info popover */}
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center">
-                          <Moon className="h-3 w-3 mr-1 text-indigo-400" />
-                          <label className="text-xs">Night Shift:</label>
-                          <Popover>
-                            <PopoverTrigger>
-                              <Info className="h-3 w-3 ml-1 text-muted-foreground cursor-help" />
-                            </PopoverTrigger>
-                            <PopoverContent side="right" className="p-2 text-xs w-60">
-                              {getShiftEffectivenessInfo(district)}
-                            </PopoverContent>
-                          </Popover>
-                        </div>
-                        <div className="flex space-x-1 items-center">
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="h-5 w-5 p-0 text-xs"
-                            onClick={() => {
-                              if (policeAllocation[district].night > 1) {
-                                handlePoliceAllocation(district, "night", policeAllocation[district].night - 1)
-                              }
-                            }}
-                            disabled={policeAllocation[district].night <= 1}
-                          >
-                            -
-                          </Button>
-                          <span className="w-4 text-center text-xs">{policeAllocation[district].night}</span>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="h-5 w-5 p-0 text-xs"
-                            onClick={() => handlePoliceAllocation(district, "night", policeAllocation[district].night + 1)}
-                            disabled={policeAllocation.unallocated <= 0}
-                          >
-                            +
-                          </Button>
-                        </div>
-                      </div>
-                      
-                      {/* Removed the separate shift effectiveness info section that was here */}
+                      {/* Using ShiftControl component for night shift */}
+                      <ShiftControl 
+                        type="Night" 
+                        icon={Moon} 
+                        iconColor="text-indigo-400" 
+                        district={district} 
+                        policeAllocation={policeAllocation} 
+                        handlePoliceAllocation={handlePoliceAllocation}
+                        getShiftEffectivenessInfo={getShiftEffectivenessInfo}
+                      />
                     </div>
 
                     {/* Common crimes */}
@@ -699,36 +679,8 @@ export default function CityMap({
                     <div className="space-y-1">
                       <div className="flex items-center">
                         <h5 className="text-xs font-medium">Demographics</h5>
-                        {/* Racial bias warning with fixed bullet points */}
-                        {racialBiasWarning.warning && (
-                          <Popover>
-                            <PopoverTrigger>
-                              <AlertTriangle 
-                                className="h-3 w-3 ml-1.5 text-red-600 dark:text-red-400 cursor-help" 
-                              />
-                            </PopoverTrigger>
-                            <PopoverContent className="w-64 p-2.5">
-                              <div className="space-y-1.5">
-                                <h4 className="font-medium text-sm flex items-center gap-1.5">
-                                  <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
-                                  {racialBiasWarning.title}
-                                </h4>
-                                <p className="text-xs">{racialBiasWarning.description}</p>
-                                <div className="pt-0.5">
-                                  <p className="text-[10px] font-medium mb-0.5">Tips:</p>
-                                  <ul className="text-[9px] space-y-0.5 pl-4">
-                                    {racialBiasWarning.tips.map((tip, i) => (
-                                      <li key={i} className="flex items-start">
-                                        <span className="text-primary inline-block mr-1.5 ml-[-1rem]">•</span>
-                                        <span>{tip}</span>
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              </div>
-                            </PopoverContent>
-                          </Popover>
-                        )}
+                        {/* Using WarningTooltip component */}
+                        {racialBiasWarning.warning && <WarningTooltip {...racialBiasWarning} />}
                       </div>
                       
                       <div className="grid grid-cols-2 gap-2 bg-muted/30 p-2 rounded">
