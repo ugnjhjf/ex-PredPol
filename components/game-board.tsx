@@ -155,7 +155,7 @@ export default function GameBoard({
   // Handle continue to next round
   const handleContinueToNextRound = () => {
     closeRoundSummary()
-    if (currentRound <= 10) {
+    if (currentRound <= 5) {
       setActiveTab("map") // Switch to map tab for the next round
     }
   }
@@ -205,7 +205,7 @@ export default function GameBoard({
         <div className="flex items-center gap-4">
           <Badge variant="outline" className="text-lg px-3 py-1 flex items-center gap-1.5">
             <Clock className="h-5 w-5" />
-            Round: {currentRound}/10
+            Round: {currentRound}/5
           </Badge>
           
           {/* Add budget badge */}

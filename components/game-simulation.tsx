@@ -946,11 +946,11 @@ export default function GameSimulation() {
       district4: "",
     })
     
-    if (currentRound < 10) {
-      // For rounds 1-9, move to next round
+    if (currentRound < 5) {
+      // For rounds 1-4, move to next round
       setCurrentRound(currentRound + 1)
-    } else if (currentRound === 10) {
-      // For round 10, show results dialog when End Round button is clicked
+    } else if (currentRound === 5) {
+      // For round 5, show results dialog when End Round button is clicked
       setGameEndReason("completed")
       setShowResultsDialog(true)
     }
@@ -1129,7 +1129,7 @@ export default function GameSimulation() {
       district4: "",
     })
     setGameMetrics({
-      budget: 3000, 
+      budget: 5000, 
       income: 0,
       expenses: 0,
       population: {
