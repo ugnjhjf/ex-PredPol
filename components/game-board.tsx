@@ -99,10 +99,10 @@ export default function GameBoard({
     // When a new round starts, collect special events only from the current round summary
     if (roundSummary && roundSummary.specialEvents && roundSummary.specialEvents.length > 0) {
       // Limit to at most 3 events per round
-      const limitedEvents = roundSummary.specialEvents.slice(0, 3).map(event => ({
+      const limitedEvents = roundSummary.specialEvents.slice(0, 3).map((event, index) => ({
         ...event,
         round: currentRound,
-        timestamp: new Date().toISOString(),
+        timestamp: `${currentRound}-${index}`, // Use stable identifier instead of Date.now()
         read: false
       }))
       
