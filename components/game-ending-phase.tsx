@@ -193,14 +193,6 @@ export default function GameEndingPhase({
           重新开始游戏
         </Button>
       </div>
-
-      {/* 感谢信息 */}
-      <div className="text-center text-sm text-muted-foreground">
-        <p>
-          感谢您参与AI素养教育游戏！希望这个体验帮助您更好地理解
-          AI技术在社会中的复杂影响。
-        </p>
-      </div>
     </div>
   )
 }

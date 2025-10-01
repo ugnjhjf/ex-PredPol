@@ -17,17 +17,6 @@ export interface AITrainingParameter {
   ethicalConcern: string
 }
 
-export interface AITrainingOption {
-  id: string
-  name: string
-  description: string
-  impact: {
-    accuracy: number
-    fairness: number
-    transparency: number
-  }
-  category: 'data' | 'algorithm' | 'validation' | 'bias' | 'community'
-}
 
 export interface PolicyOption {
   id: string
@@ -130,44 +119,6 @@ export const AI_TRAINING_PARAMETERS: AITrainingParameter[] = [
   }
 ]
 
-// AI训练选项配置（保留原有选项作为技术层面选择）
-export const AI_TRAINING_OPTIONS: AITrainingOption[] = [
-  {
-    id: 'diverse_data',
-    name: '多样化数据收集',
-    description: '从不同社区和人群收集训练数据，提高模型公平性',
-    impact: { accuracy: 5, fairness: 15, transparency: 5 },
-    category: 'data'
-  },
-  {
-    id: 'algorithm_transparency',
-    name: '算法透明度',
-    description: '使用可解释的AI算法，让决策过程更透明',
-    impact: { accuracy: 0, fairness: 10, transparency: 20 },
-    category: 'algorithm'
-  },
-  {
-    id: 'bias_detection',
-    name: '偏见检测机制',
-    description: '建立系统检测和纠正算法偏见',
-    impact: { accuracy: 5, fairness: 20, transparency: 10 },
-    category: 'bias'
-  },
-  {
-    id: 'community_validation',
-    name: '社区验证',
-    description: '让社区参与模型验证和反馈',
-    impact: { accuracy: 10, fairness: 15, transparency: 15 },
-    category: 'community'
-  },
-  {
-    id: 'cross_validation',
-    name: '交叉验证',
-    description: '使用严格的验证方法确保模型准确性',
-    impact: { accuracy: 20, fairness: 5, transparency: 5 },
-    category: 'validation'
-  }
-]
 
 // 政策选项配置
 export const POLICY_OPTIONS: PolicyOption[] = [
