@@ -64,6 +64,11 @@ export interface PolicySelectionState {
   availablePolicies: PolicyOption[]
 }
 
+export interface GameSettings {
+  showDetailedValues: boolean
+  educationMode: boolean
+}
+
 export interface GameState {
   phase: GamePhase
   currentRound: number
@@ -73,6 +78,7 @@ export interface GameState {
   report: GameReport | null
   ending: GameEnding | null
   gameCompleted: boolean
+  settings: GameSettings
 }
 
 // AI训练参数配置
@@ -81,7 +87,7 @@ export const AI_TRAINING_PARAMETERS: AITrainingParameter[] = [
     id: 'education',
     name: '学历',
     description: '将学历作为AI训练的特征参数',
-    impact: { accuracy: 40, fairness: -40, transparency: 12 },
+    impact: { accuracy: 35, fairness: -45, transparency: 10 },
     category: 'demographic',
     ethicalConcern: '可能加剧教育不平等，对低学历群体产生偏见'
   },
@@ -89,7 +95,7 @@ export const AI_TRAINING_PARAMETERS: AITrainingParameter[] = [
     id: 'gender',
     name: '性别',
     description: '将性别作为AI训练的特征参数',
-    impact: { accuracy: 25, fairness: -55, transparency: 8 },
+    impact: { accuracy: 30, fairness: -60, transparency: 5 },
     category: 'demographic',
     ethicalConcern: '可能强化性别刻板印象，导致性别歧视'
   },
@@ -97,7 +103,7 @@ export const AI_TRAINING_PARAMETERS: AITrainingParameter[] = [
     id: 'income',
     name: '收入水平',
     description: '将收入水平作为AI训练的特征参数',
-    impact: { accuracy: 25, fairness: -70, transparency: 6 },
+    impact: { accuracy: 30, fairness: -75, transparency: 3 },
     category: 'socioeconomic',
     ethicalConcern: '可能加剧经济不平等，对低收入群体产生系统性偏见'
   },
@@ -105,7 +111,7 @@ export const AI_TRAINING_PARAMETERS: AITrainingParameter[] = [
     id: 'community_care',
     name: '社区关爱',
     description: '将社区关爱程度作为AI训练的特征参数',
-    impact: { accuracy: 10, fairness: 35, transparency: 20 },
+    impact: { accuracy: 20, fairness: 50, transparency: 30 },
     category: 'community',
     ethicalConcern: '相对较少的伦理风险，但需要确保数据收集的公平性'
   },
@@ -113,7 +119,7 @@ export const AI_TRAINING_PARAMETERS: AITrainingParameter[] = [
     id: 'skin_color',
     name: '肤色',
     description: '将肤色作为AI训练的特征参数',
-    impact: { accuracy: 12, fairness: -50, transparency: 10 },
+    impact: { accuracy: 20, fairness: -65, transparency: 8 },
     category: 'demographic',
     ethicalConcern: '高风险参数，可能导致严重的种族偏见和歧视'
   }
@@ -133,21 +139,21 @@ export const POLICY_OPTIONS: PolicyOption[] = [
     id: 'cctv',
     name: 'CCTV监控系统',
     description: '传统闭路电视监控，相对安全但效果有限',
-    impact: { trust: -5, crimeReduction: 15, accuracy: 10, fairness: 5 },
+    impact: { trust: -5, crimeReduction: 15, accuracy: 15, fairness: 10 },
     riskLevel: 'low'
   },
   {
     id: 'ai_facial_recognition',
     name: 'AI人脸识别',
     description: '人工智能人脸识别技术，高效但存在偏见风险',
-    impact: { trust: -15, crimeReduction: 25, accuracy: 20, fairness: -10 },
+    impact: { trust: -15, crimeReduction: 25, accuracy: 25, fairness: -20 },
     riskLevel: 'high'
   },
   {
     id: 'drone_surveillance',
     name: '无人机巡逻',
     description: '无人机空中监控，平衡效率和隐私',
-    impact: { trust: -8, crimeReduction: 20, accuracy: 15, fairness: 0 },
+    impact: { trust: -8, crimeReduction: 20, accuracy: 20, fairness: 5 },
     riskLevel: 'medium'
   }
 ]
@@ -155,29 +161,29 @@ export const POLICY_OPTIONS: PolicyOption[] = [
 // 结局分数范围配置
 export const ENDING_SCORE_RANGES = {
   hidden: {
-    accuracy: { min: 0, max: 40 },
-    fairness: { min: 80, max: 100 },
-    transparency: { min: 80, max: 100 }
+    accuracy: { min: 0, max: 50 },
+    fairness: { min: 75, max: 100 },
+    transparency: { min: 75, max: 100 }
   },
   failure: {
-    accuracy: { min: 0, max: 60 },
-    fairness: { min: 0, max: 40 },
-    transparency: { min: 0, max: 50 }
+    accuracy: { min: 0, max: 70 },
+    fairness: { min: 0, max: 35 },
+    transparency: { min: 0, max: 55 }
   },
   bias: {
-    accuracy: { min: 70, max: 100 },
+    accuracy: { min: 75, max: 100 },
     fairness: { min: 0, max: 50 },
-    transparency: { min: 0, max: 70 }
+    transparency: { min: 0, max: 75 }
   },
   compromise: {
-    accuracy: { min: 50, max: 90 },
-    fairness: { min: 40, max: 70 },
-    transparency: { min: 40, max: 75 }
+    accuracy: { min: 45, max: 90 },
+    fairness: { min: 35, max: 70 },
+    transparency: { min: 35, max: 80 }
   },
   ideal: {
-    accuracy: { min: 80, max: 100 },
-    fairness: { min: 40, max: 100 },
-    transparency: { min: 60, max: 100 }
+    accuracy: { min: 70, max: 100 },
+    fairness: { min: 50, max: 100 },
+    transparency: { min: 50, max: 100 }
   }
 }
 

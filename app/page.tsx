@@ -17,6 +17,10 @@ export default function Home() {
   const [selectedPolicy, setSelectedPolicy] = useState<string>('')
   const [gameReport, setGameReport] = useState<any>(null)
   const [gameEnding, setGameEnding] = useState<any>(null)
+  const [gameSettings, setGameSettings] = useState({
+    showDetailedValues: false,
+    educationMode: false
+  })
 
   const handleSelectionChange = (parameters: string[]) => {
     setSelectedParameters(parameters)
@@ -62,16 +66,18 @@ export default function Home() {
 
   const renderCurrentPhase = () => {
     switch (gamePhase) {
-      case 'ai_training':
-        return (
-          <AITrainingPhase
-            selectedParameters={selectedParameters}
-            aiReliability={aiReliability}
-            canRetrain={canRetrain}
-            onSelectionChange={handleSelectionChange}
-            onConfirm={handleAITrainingConfirm}
-          />
-        )
+          case 'ai_training':
+            return (
+              <AITrainingPhase
+                selectedParameters={selectedParameters}
+                aiReliability={aiReliability}
+                canRetrain={canRetrain}
+                onSelectionChange={handleSelectionChange}
+                onConfirm={handleAITrainingConfirm}
+                settings={gameSettings}
+                onSettingsChange={setGameSettings}
+              />
+            )
       case 'policy_selection':
         return (
           <PolicySelectionPhase
@@ -79,6 +85,7 @@ export default function Home() {
             availablePolicies={POLICY_OPTIONS}
             onSelectionChange={handlePolicySelection}
             onConfirm={handlePolicyConfirm}
+            settings={gameSettings}
           />
         )
       case 'ending':
@@ -86,6 +93,8 @@ export default function Home() {
           <GameEndingPhase
             ending={gameEnding}
             onRestart={handleRestart}
+            settings={gameSettings}
+            gameReport={gameReport}
           />
         )
       default:

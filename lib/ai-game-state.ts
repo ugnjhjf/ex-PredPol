@@ -92,7 +92,7 @@ export const generateGameReport = (
   
   const transparency = Math.min(100, Math.max(0, 
     (baseTransparency + aiTransparencyImpact) * 0.7 + 
-    (baseTransparency + selectedPolicy.impact.accuracy) * 0.3
+    (baseTransparency + selectedPolicy.impact.fairness) * 0.3
   ))
 
   // 调试信息

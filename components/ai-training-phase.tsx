@@ -5,8 +5,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { CheckCircle2, AlertCircle, Info, AlertTriangle } from "lucide-react"
+import { CheckCircle2, AlertCircle, Info, AlertTriangle, Settings } from "lucide-react"
 import { AI_TRAINING_PARAMETERS } from "@/types/game"
+import GameSettings from "./game-settings"
 
 interface AITrainingPhaseProps {
   selectedParameters: string[]
@@ -14,6 +15,11 @@ interface AITrainingPhaseProps {
   canRetrain: boolean
   onSelectionChange: (parameters: string[]) => void
   onConfirm: () => void
+  settings?: {
+    showDetailedValues: boolean
+    educationMode: boolean
+  }
+  onSettingsChange?: (settings: { showDetailedValues: boolean; educationMode: boolean }) => void
 }
 
 export default function AITrainingPhase({
@@ -21,10 +27,13 @@ export default function AITrainingPhase({
   aiReliability,
   canRetrain,
   onSelectionChange,
-  onConfirm
+  onConfirm,
+  settings = { showDetailedValues: false, educationMode: false },
+  onSettingsChange
 }: AITrainingPhaseProps) {
   const [hoveredOption, setHoveredOption] = useState<string | null>(null)
   const [isClient, setIsClient] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
 
   useEffect(() => {
     setIsClient(true)
@@ -88,14 +97,27 @@ export default function AITrainingPhase({
                 选择训练参数，构建您的AI系统
               </p>
             </div>
-            <div className="text-right">
-              <div className="text-sm text-slate-500 dark:text-slate-400">当前状态</div>
-              <div className={`text-2xl font-bold ${getReliabilityColor(aiReliability)}`}>
-                {aiReliability.toFixed(1)}%
+            <div className="flex items-center gap-4">
+              <div className="text-right">
+                <div className="text-sm text-slate-500 dark:text-slate-400">当前状态</div>
+                <div className={`text-2xl font-bold ${getReliabilityColor(aiReliability)}`}>
+                  {aiReliability.toFixed(1)}%
+                </div>
+                <div className={`text-sm ${getReliabilityColor(aiReliability)}`}>
+                  {getReliabilityStatus(aiReliability)}
+                </div>
               </div>
-              <div className={`text-sm ${getReliabilityColor(aiReliability)}`}>
-                {getReliabilityStatus(aiReliability)}
-              </div>
+              {onSettingsChange && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowSettings(true)}
+                  className="flex items-center gap-2"
+                >
+                  <Settings className="h-4 w-4" />
+                  设置
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -180,26 +202,28 @@ export default function AITrainingPhase({
                         </CardHeader>
                         <CardContent className="pt-0">
                           {/* 影响指标 */}
-                          <div className="grid grid-cols-3 gap-2 mb-3">
-                            <div className="text-center">
-                              <div className="text-xs text-slate-500">准确性</div>
-                              <div className={`text-sm font-bold ${parameter.impact.accuracy > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                {parameter.impact.accuracy > 0 ? '+' : ''}{parameter.impact.accuracy}%
+                          {settings.showDetailedValues && (
+                            <div className="grid grid-cols-3 gap-2 mb-3">
+                              <div className="text-center">
+                                <div className="text-xs text-slate-500">准确性</div>
+                                <div className={`text-sm font-bold ${parameter.impact.accuracy > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                  {parameter.impact.accuracy > 0 ? '+' : ''}{parameter.impact.accuracy}%
+                                </div>
+                              </div>
+                              <div className="text-center">
+                                <div className="text-xs text-slate-500">公平性</div>
+                                <div className={`text-sm font-bold ${parameter.impact.fairness > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                  {parameter.impact.fairness > 0 ? '+' : ''}{parameter.impact.fairness}%
+                                </div>
+                              </div>
+                              <div className="text-center">
+                                <div className="text-xs text-slate-500">透明度</div>
+                                <div className={`text-sm font-bold ${parameter.impact.transparency > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                  {parameter.impact.transparency > 0 ? '+' : ''}{parameter.impact.transparency}%
+                                </div>
                               </div>
                             </div>
-                            <div className="text-center">
-                              <div className="text-xs text-slate-500">公平性</div>
-                              <div className={`text-sm font-bold ${parameter.impact.fairness > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                {parameter.impact.fairness > 0 ? '+' : ''}{parameter.impact.fairness}%
-                              </div>
-                            </div>
-                            <div className="text-center">
-                              <div className="text-xs text-slate-500">透明度</div>
-                              <div className={`text-sm font-bold ${parameter.impact.transparency > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                {parameter.impact.transparency > 0 ? '+' : ''}{parameter.impact.transparency}%
-                              </div>
-                            </div>
-                          </div>
+                          )}
 
                           {/* 伦理风险提示 */}
                           <div className="space-y-2">
@@ -248,20 +272,22 @@ export default function AITrainingPhase({
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="pt-0">
-                      <div className="grid grid-cols-3 gap-2 mb-3">
-                        <div className="text-center">
-                          <div className="text-xs text-slate-500">准确性</div>
-                          <div className="text-sm font-bold">基础</div>
+                      {settings.showDetailedValues && (
+                        <div className="grid grid-cols-3 gap-2 mb-3">
+                          <div className="text-center">
+                            <div className="text-xs text-slate-500">准确性</div>
+                            <div className="text-sm font-bold">基础</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-xs text-slate-500">公平性</div>
+                            <div className="text-sm font-bold text-green-600">高</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-xs text-slate-500">透明度</div>
+                            <div className="text-sm font-bold">基础</div>
+                          </div>
                         </div>
-                        <div className="text-center">
-                          <div className="text-xs text-slate-500">公平性</div>
-                          <div className="text-sm font-bold text-green-600">高</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-xs text-slate-500">透明度</div>
-                          <div className="text-sm font-bold">基础</div>
-                        </div>
-                      </div>
+                      )}
                       <Badge variant="outline" className="text-xs bg-blue-100 text-blue-700 w-full">
                         伦理安全
                       </Badge>
@@ -291,20 +317,22 @@ export default function AITrainingPhase({
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="pt-0">
-                      <div className="grid grid-cols-3 gap-2 mb-3">
-                        <div className="text-center">
-                          <div className="text-xs text-slate-500">准确性</div>
-                          <div className="text-sm font-bold text-red-600">低</div>
+                      {settings.showDetailedValues && (
+                        <div className="grid grid-cols-3 gap-2 mb-3">
+                          <div className="text-center">
+                            <div className="text-xs text-slate-500">准确性</div>
+                            <div className="text-sm font-bold text-red-600">低</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-xs text-slate-500">公平性</div>
+                            <div className="text-sm font-bold text-green-600">极高</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-xs text-slate-500">透明度</div>
+                            <div className="text-sm font-bold text-green-600">极高</div>
+                          </div>
                         </div>
-                        <div className="text-center">
-                          <div className="text-xs text-slate-500">公平性</div>
-                          <div className="text-sm font-bold text-green-600">极高</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-xs text-slate-500">透明度</div>
-                          <div className="text-sm font-bold text-green-600">极高</div>
-                        </div>
-                      </div>
+                      )}
                       <Badge variant="outline" className="text-xs bg-green-100 text-green-700 w-full">
                         完全伦理安全
                       </Badge>
@@ -315,6 +343,104 @@ export default function AITrainingPhase({
             </Card>
           </div>
         </div>
+
+        {/* 教育模式 - 实时计算展示 */}
+        {settings.educationMode && (
+          <div className="mt-8">
+            <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 border-blue-200 dark:border-blue-800">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <div className="w-6 h-6 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
+                    <span className="text-blue-600 dark:text-blue-400 text-xs">📊</span>
+                  </div>
+                  实时数值计算
+                </CardTitle>
+                <CardDescription>
+                  当前选择的参数对AI系统各项指标的影响计算过程
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {/* AI参数影响计算 */}
+                  <div className="space-y-2">
+                    <h4 className="font-medium text-sm">AI训练参数影响</h4>
+                    <div className="bg-white dark:bg-slate-800 p-3 rounded-lg text-sm font-mono">
+                      {selectedParameters.includes('no_ai') ? (
+                        <div className="text-muted-foreground">
+                          不使用AI技术 → 所有影响值 = 0
+                        </div>
+                      ) : selectedParameters.length === 0 ? (
+                        <div className="text-muted-foreground">
+                          未选择参数 → 所有影响值 = 0
+                        </div>
+                      ) : (
+                        <div className="space-y-1">
+                          {selectedParameters.map(paramId => {
+                            const param = AI_TRAINING_PARAMETERS.find(p => p.id === paramId)
+                            if (!param) return null
+                            return (
+                              <div key={paramId} className="flex items-center gap-2">
+                                <span className="text-blue-600">{param.name}:</span>
+                                <span>准确性 +{param.impact.accuracy}%</span>
+                                <span className="text-red-600">公平性 {param.impact.fairness}%</span>
+                                <span className="text-green-600">透明度 +{param.impact.transparency}%</span>
+                              </div>
+                            )
+                          })}
+                          <div className="border-t pt-2 mt-2">
+                            <div className="font-bold">
+                              总计: 准确性 +{selectedParameters.reduce((sum, id) => sum + (AI_TRAINING_PARAMETERS.find(p => p.id === id)?.impact.accuracy || 0), 0)}% | 
+                              公平性 {selectedParameters.reduce((sum, id) => sum + (AI_TRAINING_PARAMETERS.find(p => p.id === id)?.impact.fairness || 0), 0)}% | 
+                              透明度 +{selectedParameters.reduce((sum, id) => sum + (AI_TRAINING_PARAMETERS.find(p => p.id === id)?.impact.transparency || 0), 0)}%
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* AI可信度计算 */}
+                  <div className="space-y-2">
+                    <h4 className="font-medium text-sm">AI可信度计算</h4>
+                    <div className="bg-white dark:bg-slate-800 p-3 rounded-lg text-sm font-mono">
+                      {selectedParameters.includes('no_ai') ? (
+                        <div>不使用AI技术 → 可信度 = 0%</div>
+                      ) : selectedParameters.length === 0 ? (
+                        <div>未选择参数 → 可信度 = 50% (基础值)</div>
+                      ) : (
+                        <div className="space-y-1">
+                          <div>基础可信度 = 50%</div>
+                          <div>参数影响 = (准确性 + 公平性 + 透明度) ÷ 3</div>
+                          <div className="font-bold">
+                            最终可信度 = 50% + {((selectedParameters.reduce((sum, id) => sum + (AI_TRAINING_PARAMETERS.find(p => p.id === id)?.impact.accuracy || 0), 0) + selectedParameters.reduce((sum, id) => sum + (AI_TRAINING_PARAMETERS.find(p => p.id === id)?.impact.fairness || 0), 0) + selectedParameters.reduce((sum, id) => sum + (AI_TRAINING_PARAMETERS.find(p => p.id === id)?.impact.transparency || 0), 0)) / 3).toFixed(1)}% = {aiReliability.toFixed(1)}%
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 状态评估 */}
+                  <div className="space-y-2">
+                    <h4 className="font-medium text-sm">当前状态评估</h4>
+                    <div className="bg-white dark:bg-slate-800 p-3 rounded-lg text-sm">
+                      <div className="flex items-center gap-2">
+                        <span>可信度: {aiReliability.toFixed(1)}%</span>
+                        <Badge variant={aiReliability >= 70 && aiReliability <= 85 ? "default" : "destructive"}>
+                          {getReliabilityStatus(aiReliability)}
+                        </Badge>
+                        {canRetrain && (
+                          <Badge variant="outline" className="text-orange-600">
+                            建议重新训练
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Dashboard Footer */}
         <div className="mt-8">
@@ -381,6 +507,15 @@ export default function AITrainingPhase({
           </div>
         </div>
       </div>
+
+      {/* 设置面板 */}
+      {showSettings && onSettingsChange && (
+        <GameSettings
+          settings={settings}
+          onSettingsChange={onSettingsChange}
+          onClose={() => setShowSettings(false)}
+        />
+      )}
     </div>
   )
 }

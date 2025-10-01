@@ -12,13 +12,18 @@ interface PolicySelectionPhaseProps {
   availablePolicies: PolicyOption[]
   onSelectionChange: (policyId: string) => void
   onConfirm: () => void
+  settings?: {
+    showDetailedValues: boolean
+    educationMode: boolean
+  }
 }
 
 export default function PolicySelectionPhase({
   selectedPolicy,
   availablePolicies,
   onSelectionChange,
-  onConfirm
+  onConfirm,
+  settings = { showDetailedValues: false, educationMode: false }
 }: PolicySelectionPhaseProps) {
   const [isClient, setIsClient] = useState(false)
 
@@ -191,6 +196,72 @@ export default function PolicySelectionPhase({
           确认政策选择
         </Button>
       </div>
+
+      {/* 教育模式 - 实时计算展示 */}
+      {settings.educationMode && (
+        <div className="mt-8">
+          <Card className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950 border-green-200 dark:border-green-800">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <div className="w-6 h-6 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
+                  <span className="text-green-600 dark:text-green-400 text-xs">📊</span>
+                </div>
+                政策影响计算
+              </CardTitle>
+              <CardDescription>
+                当前选择的政策对各项指标的影响计算过程
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {/* 政策影响计算 */}
+                <div className="space-y-2">
+                  <h4 className="font-medium text-sm">政策影响分析</h4>
+                  <div className="bg-white dark:bg-slate-800 p-3 rounded-lg text-sm font-mono">
+                    {selectedPolicy ? (
+                      (() => {
+                        const policy = availablePolicies.find(p => p.id === selectedPolicy)
+                        if (!policy) return <div className="text-muted-foreground">未选择政策</div>
+                        return (
+                          <div className="space-y-1">
+                            <div className="text-blue-600 font-medium">{policy.name}</div>
+                            <div className="space-y-1">
+                              <div>信任度影响: {policy.impact.trust > 0 ? '+' : ''}{policy.impact.trust}%</div>
+                              <div>犯罪减少: {policy.impact.crimeReduction > 0 ? '+' : ''}{policy.impact.crimeReduction}%</div>
+                              <div>准确性影响: {policy.impact.accuracy > 0 ? '+' : ''}{policy.impact.accuracy}%</div>
+                              <div>公平性影响: {policy.impact.fairness > 0 ? '+' : ''}{policy.impact.fairness}%</div>
+                            </div>
+                            <div className="border-t pt-2 mt-2">
+                              <div className="text-xs text-muted-foreground">
+                                风险等级: {policy.riskLevel === 'high' ? '高风险' : policy.riskLevel === 'medium' ? '中等风险' : '低风险'}
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })()
+                    ) : (
+                      <div className="text-muted-foreground">请选择一个政策</div>
+                    )}
+                  </div>
+                </div>
+
+                {/* 计算公式说明 */}
+                <div className="space-y-2">
+                  <h4 className="font-medium text-sm">最终得分计算公式</h4>
+                  <div className="bg-white dark:bg-slate-800 p-3 rounded-lg text-sm font-mono">
+                    <div className="space-y-1">
+                      <div>最终得分 = (基础分数 + AI影响) × 0.7 + (基础分数 + 政策影响) × 0.3</div>
+                      <div className="text-xs text-muted-foreground mt-2">
+                        其中：基础分数 = 50%，AI影响来自训练参数，政策影响来自选择的政策
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* 教育提示 */}
       <Card className="bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800">
