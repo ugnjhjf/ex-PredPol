@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { CheckCircle2, AlertCircle, Info, AlertTriangle, Settings } from "lucide-react"
-import { AI_TRAINING_PARAMETERS, SCALE_MAPPING, ScaleValue } from "@/types"
+import { AI_TRAINING_PARAMETERS, getScaleLabel, ScaleValue } from "@/types"
 import { calculateAIMetrics, isAIMetricsSuitable } from "@/lib/ai-game-state"
 import GameSettings from "./game-settings"
 
@@ -88,6 +88,38 @@ export default function AITrainingPhase({
     }
   }
 
+  // 计算选择数据集组合后的指标值
+  const calculateDatasetCombinationImpact = () => {
+    const baseAccuracy = 2
+    const baseTrust = 3
+    const baseCrimeRate = 3.5
+    
+    const totalAccuracy = selectedParameters.reduce((sum, paramId) => {
+      const param = AI_TRAINING_PARAMETERS.find(p => p.id === paramId)
+      return sum + (param ? param.impact.accuracy : 0)
+    }, 0)
+    
+    const totalTrust = selectedParameters.reduce((sum, paramId) => {
+      const param = AI_TRAINING_PARAMETERS.find(p => p.id === paramId)
+      return sum + (param ? param.impact.trust : 0)
+    }, 0)
+    
+    const totalCrimeRate = selectedParameters.reduce((sum, paramId) => {
+      const param = AI_TRAINING_PARAMETERS.find(p => p.id === paramId)
+      return sum + (param ? param.impact.crimeRate : 0)
+    }, 0)
+    
+    const finalAccuracy = Math.max(0, baseAccuracy + totalAccuracy) // 下线封底0
+    const finalTrust = Math.max(0, baseTrust + totalTrust) // 下线封底0
+    const finalCrimeRate = Math.max(0, baseCrimeRate + totalCrimeRate) // 下线封底0
+    
+    return {
+      accuracy: finalAccuracy,
+      trust: finalTrust,
+      crimeRate: finalCrimeRate
+    }
+  }
+
 
 
   return (
@@ -140,7 +172,7 @@ export default function AITrainingPhase({
                     {accuracy}
                   </div>
                   <div className={`text-sm font-medium ${getMetricColor(accuracy, 'accuracy')}`}>
-                    {SCALE_MAPPING[accuracy]}
+                    {getScaleLabel(accuracy)}
                   </div>
                   <Progress value={(accuracy - 1) / 4 * 100} className="h-2 mt-2" />
                 </div>
@@ -152,7 +184,7 @@ export default function AITrainingPhase({
                     {trust}
                   </div>
                   <div className={`text-sm font-medium ${getMetricColor(trust, 'trust')}`}>
-                    {SCALE_MAPPING[trust]}
+                    {getScaleLabel(trust)}
                   </div>
                   <Progress value={(trust - 1) / 4 * 100} className="h-2 mt-2" />
                 </div>
@@ -164,7 +196,7 @@ export default function AITrainingPhase({
                     {crimeRate}
                   </div>
                   <div className={`text-sm font-medium ${getMetricColor(crimeRate, 'crimeRate')}`}>
-                    {SCALE_MAPPING[crimeRate]}
+                    {getScaleLabel(crimeRate)}
                   </div>
                   <Progress value={(crimeRate - 1) / 4 * 100} className="h-2 mt-2" />
                 </div>
@@ -228,37 +260,40 @@ export default function AITrainingPhase({
                         </CardHeader>
                         <CardContent className="pt-0">
                           {/* 影响指标 */}
-                          {settings.showDetailedValues && (
-                            <div className="grid grid-cols-3 gap-2 mb-3">
-                              <div className="text-center">
-                                <div className="text-xs text-slate-500">准确度</div>
-                                <div className={`text-sm font-bold ${getMetricColor(parameter.impact.accuracy, 'accuracy')}`}>
-                                  {parameter.impact.accuracy}
+                          {settings.showDetailedValues && (() => {
+                            const impact = calculateDatasetCombinationImpact()
+                            return (
+                              <div className="grid grid-cols-3 gap-2 mb-3">
+                                <div className="text-center">
+                                  <div className="text-xs text-slate-500">准确度</div>
+                                  <div className={`text-sm font-bold ${getMetricColor(accuracy, 'accuracy')}`}>
+                                    {impact.accuracy.toFixed(1)}
+                                  </div>
+                                  <div className="text-xs text-slate-400">
+                                    当前: {accuracy}
+                                  </div>
                                 </div>
-                                <div className="text-xs text-slate-400">
-                                  {SCALE_MAPPING[parameter.impact.accuracy]}
+                                <div className="text-center">
+                                  <div className="text-xs text-slate-500">信任度</div>
+                                  <div className={`text-sm font-bold ${getMetricColor(trust, 'trust')}`}>
+                                    {impact.trust.toFixed(1)}
+                                  </div>
+                                  <div className="text-xs text-slate-400">
+                                    当前: {trust}
+                                  </div>
+                                </div>
+                                <div className="text-center">
+                                  <div className="text-xs text-slate-500">犯罪率</div>
+                                  <div className={`text-sm font-bold ${getMetricColor(crimeRate, 'crimeRate')}`}>
+                                    {impact.crimeRate.toFixed(1)}
+                                  </div>
+                                  <div className="text-xs text-slate-400">
+                                    当前: {crimeRate}
+                                  </div>
                                 </div>
                               </div>
-                              <div className="text-center">
-                                <div className="text-xs text-slate-500">信任度</div>
-                                <div className={`text-sm font-bold ${getMetricColor(parameter.impact.trust, 'trust')}`}>
-                                  {parameter.impact.trust}
-                                </div>
-                                <div className="text-xs text-slate-400">
-                                  {SCALE_MAPPING[parameter.impact.trust]}
-                                </div>
-                              </div>
-                              <div className="text-center">
-                                <div className="text-xs text-slate-500">犯罪率</div>
-                                <div className={`text-sm font-bold ${getMetricColor(parameter.impact.crimeRate, 'crimeRate')}`}>
-                                  {parameter.impact.crimeRate}
-                                </div>
-                                <div className="text-xs text-slate-400">
-                                  {SCALE_MAPPING[parameter.impact.crimeRate]}
-                                </div>
-                              </div>
-                            </div>
-                          )}
+                            )
+                          })()}
 
                           {/* 伦理风险提示 */}
                           <div className="space-y-2">
@@ -319,9 +354,9 @@ export default function AITrainingPhase({
                             return (
                               <div key={paramId} className="flex items-center gap-2">
                                 <span className="text-blue-600">{param.name}:</span>
-                                <span>准确度: {param.impact.accuracy}</span>
-                                <span className="text-green-600">信任度: {param.impact.trust}</span>
-                                <span className="text-orange-600">犯罪率: {param.impact.crimeRate}</span>
+                                <span>准确度: {param.impact.accuracy > 0 ? '+' : ''}{param.impact.accuracy}</span>
+                                <span className="text-green-600">信任度: {param.impact.trust > 0 ? '+' : ''}{param.impact.trust}</span>
+                                <span className="text-orange-600">犯罪率: {param.impact.crimeRate > 0 ? '+' : ''}{param.impact.crimeRate}</span>
                               </div>
                             )
                           })}
@@ -348,9 +383,9 @@ export default function AITrainingPhase({
                           <div>选择的数据集: {selectedParameters.length} 个</div>
                           <div>计算方式: 各指标取平均值，四舍五入到最接近的标度值</div>
                           <div className="font-bold">
-                            当前结果: 准确度 {accuracy} ({SCALE_MAPPING[accuracy]}) | 
-                            信任度 {trust} ({SCALE_MAPPING[trust]}) | 
-                            犯罪率 {crimeRate} ({SCALE_MAPPING[crimeRate]})
+                            当前结果: 准确度 {accuracy} ({getScaleLabel(accuracy)}) | 
+                            信任度 {trust} ({getScaleLabel(trust)}) | 
+                            犯罪率 {crimeRate} ({getScaleLabel(crimeRate)})
                           </div>
                         </div>
                       )}
@@ -365,19 +400,19 @@ export default function AITrainingPhase({
                         <div className="text-center">
                           <div className="text-xs text-slate-500">准确度</div>
                           <div className={`font-bold ${getMetricColor(accuracy, 'accuracy')}`}>
-                            {accuracy} ({SCALE_MAPPING[accuracy]})
+                            {accuracy} ({getScaleLabel(accuracy)})
                           </div>
                         </div>
                         <div className="text-center">
                           <div className="text-xs text-slate-500">信任度</div>
                           <div className={`font-bold ${getMetricColor(trust, 'trust')}`}>
-                            {trust} ({SCALE_MAPPING[trust]})
+                            {trust} ({getScaleLabel(trust)})
                           </div>
                         </div>
                         <div className="text-center">
                           <div className="text-xs text-slate-500">犯罪率</div>
                           <div className={`font-bold ${getMetricColor(crimeRate, 'crimeRate')}`}>
-                            {crimeRate} ({SCALE_MAPPING[crimeRate]})
+                            {crimeRate} ({getScaleLabel(crimeRate)})
                           </div>
                         </div>
                       </div>
@@ -407,7 +442,7 @@ export default function AITrainingPhase({
                 其它选项
               </CardTitle>
               <CardDescription>
-                选择完全避免AI技术，依赖传统警务方法
+                选择完全避免AI技术，依赖传统警务方法”
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -511,7 +546,7 @@ export default function AITrainingPhase({
           <div className="flex justify-center mt-6">
             <Button
               onClick={onConfirm}
-              disabled={selectedParameters.length !== 2 && !selectedParameters.includes('no_ai')}
+              disabled={selectedParameters.length !== 2 && selectedParameters.length !== 0 && !selectedParameters.includes('no_ai')}
               size="lg"
               className="px-12 py-3 text-lg"
             >

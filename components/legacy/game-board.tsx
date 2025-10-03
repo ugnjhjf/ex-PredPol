@@ -29,11 +29,11 @@ import {
 } from "@/components/ui/popover"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import CityMap from "./decisions"
-import ActionSelection from "./action-selection"
+import ActionSelection from "./legacy/action-selection"
 import OverallMetrics from "./overall-metrics"
 import GameLog from "./game-log"
 import GameOverview from "./game-overview"
-import { DataAnalytics } from "@/components/data-analytics"
+import { DataAnalytics } from "@/components/legacy/data-analytics"
 
 // Add district styling variables
 const districtColors = {

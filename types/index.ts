@@ -16,4 +16,4 @@ export type { GameSettings, GameState } from './game-state'
 // 导出配置常量
 export { AI_TRAINING_PARAMETERS } from './ai-training'
 export { POLICY_OPTIONS } from './policy-selection'
-export { ENDING_SCORE_RANGES, GAME_ENDINGS } from './game-report'
+export { GAME_ENDINGS, determineEnding } from './game-report'

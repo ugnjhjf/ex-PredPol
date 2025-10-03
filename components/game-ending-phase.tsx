@@ -14,7 +14,12 @@ interface GameEndingPhaseProps {
     showDetailedValues: boolean
     educationMode: boolean
   }
-  gameReport?: any
+  gameReport?: {
+    accuracy: number
+    trust: number
+    crimeRate: number
+    overallScore: number
+  }
 }
 
 export default function GameEndingPhase({
@@ -73,16 +78,16 @@ export default function GameEndingPhase({
   }
 
   const getScoreColor = (score: number) => {
-    if (score >= 80) return "text-green-600"
-    if (score >= 60) return "text-yellow-600"
-    if (score >= 40) return "text-orange-600"
+    if (score >= 4.0) return "text-green-600"
+    if (score >= 3.0) return "text-yellow-600"
+    if (score >= 2.0) return "text-orange-600"
     return "text-red-600"
   }
 
   const getScoreLabel = (score: number) => {
-    if (score >= 80) return "优秀"
-    if (score >= 60) return "良好"
-    if (score >= 40) return "一般"
+    if (score >= 4.0) return "优秀"
+    if (score >= 3.0) return "良好"
+    if (score >= 2.0) return "一般"
     return "需要改进"
   }
 
@@ -112,7 +117,7 @@ export default function GameEndingPhase({
           <div className="flex items-center justify-center gap-3">
             <span className="text-sm text-muted-foreground">最终评分：</span>
             <span className={`text-3xl font-bold ${getScoreColor(ending.score)}`}>
-              {ending.score}
+              {ending.score.toFixed(1)}
             </span>
             <Badge className={`text-lg px-3 py-1 ${getScoreColor(ending.score)}`}>
               {getScoreLabel(ending.score)}
@@ -140,24 +145,24 @@ export default function GameEndingPhase({
             <h4 className="font-semibold">关键学习点：</h4>
             <ul className="space-y-2 list-disc list-inside">
               <li>
-                <strong>AI系统需要平衡多个目标：</strong> 不仅要追求准确性，
-                还要考虑公平性、透明度和公众信任。
+                <strong>AI系统需要平衡多个目标：</strong> 不仅要追求准确度，
+                还要考虑信任度和犯罪率控制效果。
               </li>
               <li>
                 <strong>算法偏见是真实存在的问题：</strong> AI系统可能无意中
-                放大或延续社会中的不平等现象。
+                放大或延续社会中的不平等现象，影响公众信任。
               </li>
               <li>
                 <strong>社区参与很重要：</strong> 在开发和部署AI系统时，
-                应该让受影响的社区参与决策过程。
+                应该让受影响的社区参与决策过程，建立信任。
               </li>
               <li>
-                <strong>透明度有助于建立信任：</strong> 可解释的AI系统
-                更容易获得公众的信任和接受。
+                <strong>政策选择影响深远：</strong> 不同的执法政策
+                会对准确度、信任度和犯罪率产生不同的影响。
               </li>
               <li>
                 <strong>有时不使用AI可能是更好的选择：</strong> 
-                不是所有问题都需要AI解决方案。
+                不是所有问题都需要AI解决方案，传统方法可能更合适。
               </li>
             </ul>
           </div>
@@ -207,18 +212,24 @@ export default function GameEndingPhase({
               <div className="space-y-4">
                 {/* 最终得分展示 */}
                 <div className="space-y-2">
-                  <h4 className="font-medium text-sm">最终得分</h4>
+                  <h4 className="font-medium text-sm">最终指标</h4>
                   <div className="bg-white dark:bg-slate-800 p-3 rounded-lg text-sm font-mono">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <div className="text-blue-600">准确性: {gameReport.accuracy?.toFixed(1)}%</div>
-                        <div className="text-green-600">公平性: {gameReport.fairness?.toFixed(1)}%</div>
-                        <div className="text-purple-600">透明度: {gameReport.transparency?.toFixed(1)}%</div>
+                    <div className="grid grid-cols-1 gap-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-blue-600">准确度:</span>
+                        <span className="font-bold">{gameReport.accuracy}</span>
                       </div>
-                      <div>
-                        <div className="text-orange-600">信任度: {gameReport.trustLevel?.toFixed(1)}%</div>
-                        <div className="text-red-600">犯罪率: {gameReport.crimeRate?.toFixed(1)}%</div>
-                        <div className="text-gray-600">总分: {gameReport.overallScore?.toFixed(1)}%</div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-green-600">信任度:</span>
+                        <span className="font-bold">{gameReport.trust}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-red-600">犯罪率:</span>
+                        <span className="font-bold">{gameReport.crimeRate}</span>
+                      </div>
+                      <div className="flex justify-between items-center border-t pt-2">
+                        <span className="text-gray-600">总分:</span>
+                        <span className="font-bold">{gameReport.overallScore.toFixed(1)}</span>
                       </div>
                     </div>
                   </div>
@@ -229,11 +240,11 @@ export default function GameEndingPhase({
                   <h4 className="font-medium text-sm">结局判定过程</h4>
                   <div className="bg-white dark:bg-slate-800 p-3 rounded-lg text-sm font-mono">
                     <div className="space-y-1">
-                      <div>根据准确性、公平性、透明度的得分范围：</div>
+                      <div>根据准确度、信任度、犯罪率的指标值：</div>
                       <div className="text-xs text-muted-foreground">
-                        • 准确性: {gameReport.accuracy?.toFixed(1)}% 
-                        • 公平性: {gameReport.fairness?.toFixed(1)}% 
-                        • 透明度: {gameReport.transparency?.toFixed(1)}%
+                        • 准确度: {gameReport.accuracy} 
+                        • 信任度: {gameReport.trust} 
+                        • 犯罪率: {gameReport.crimeRate}
                       </div>
                       <div className="font-bold text-blue-600">
                         匹配到结局: {ending.title}
@@ -247,9 +258,9 @@ export default function GameEndingPhase({
                   <h4 className="font-medium text-sm">学习要点</h4>
                   <div className="bg-white dark:bg-slate-800 p-3 rounded-lg text-sm">
                     <div className="space-y-2">
-                      <p>• AI训练参数的选择直接影响系统的公平性和准确性</p>
-                      <p>• 政策选择会影响公众信任和社会接受度</p>
-                      <p>• 理想的AI系统需要在效率、公平性和透明度之间找到平衡</p>
+                      <p>• AI训练参数的选择直接影响系统的准确度和信任度</p>
+                      <p>• 政策选择会影响公众信任和犯罪率控制效果</p>
+                      <p>• 理想的AI系统需要在准确度、信任度和犯罪率控制之间找到平衡</p>
                       <p>• 不同的组合会产生不同的社会影响和伦理后果</p>
                     </div>
                   </div>

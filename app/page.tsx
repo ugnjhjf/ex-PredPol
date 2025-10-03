@@ -16,7 +16,7 @@ export default function Home() {
   const [trust, setTrust] = useState<ScaleValue>(3)
   const [crimeRate, setCrimeRate] = useState<ScaleValue>(3.5)
   const [canRetrain, setCanRetrain] = useState(false)
-  const [selectedPolicy, setSelectedPolicy] = useState<string>('')
+  const [selectedPolicies, setSelectedPolicies] = useState<string[]>([])
   const [gameReport, setGameReport] = useState<any>(null)
   const [gameEnding, setGameEnding] = useState<any>(null)
   const [gameSettings, setGameSettings] = useState({
@@ -40,15 +40,15 @@ export default function Home() {
     setGamePhase('policy_selection')
   }
 
-  const handlePolicySelection = (policyId: string) => {
-    setSelectedPolicy(policyId)
+  const handlePolicySelection = (policyIds: string[]) => {
+    setSelectedPolicies(policyIds)
   }
 
   const handlePolicyConfirm = () => {
-    console.log("选择的政策:", selectedPolicy)
+    console.log("选择的政策:", selectedPolicies)
     
     // 生成游戏报告
-    const report = generateGameReport(selectedParameters, selectedPolicy, accuracy)
+    const report = generateGameReport(selectedParameters, selectedPolicies, accuracy, trust, crimeRate)
     setGameReport(report)
     
     // 确定结局
@@ -65,7 +65,7 @@ export default function Home() {
     setTrust(3)
     setCrimeRate(3.5)
     setCanRetrain(false)
-    setSelectedPolicy('')
+    setSelectedPolicies([])
     setGameReport(null)
     setGameEnding(null)
   }
@@ -89,11 +89,14 @@ export default function Home() {
       case 'policy_selection':
         return (
           <PolicySelectionPhase
-            selectedPolicy={selectedPolicy}
+            selectedPolicies={selectedPolicies}
             availablePolicies={POLICY_OPTIONS}
             onSelectionChange={handlePolicySelection}
             onConfirm={handlePolicyConfirm}
             settings={gameSettings}
+            accuracy={accuracy}
+            trust={trust}
+            crimeRate={crimeRate}
           />
         )
       case 'ending':
