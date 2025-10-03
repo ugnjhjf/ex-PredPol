@@ -4,15 +4,17 @@ import AITrainingPhase from "@/components/ai-training-phase"
 import PolicySelectionPhase from "@/components/policy-selection-phase"
 import GameEndingPhase from "@/components/game-ending-phase"
 import { useState } from "react"
-import { calculateAIReliability, isAIReliabilitySuitable, generateGameReport, completeGame } from "@/lib/ai-game-state"
-import { AI_TRAINING_PARAMETERS, POLICY_OPTIONS, GAME_ENDINGS } from "@/types/game"
+import { calculateAIMetrics, isAIMetricsSuitable, generateGameReport, completeGame } from "@/lib/ai-game-state"
+import { AI_TRAINING_PARAMETERS, POLICY_OPTIONS, GAME_ENDINGS, ScaleValue } from "@/types"
 
 type GamePhase = 'ai_training' | 'policy_selection' | 'ending'
 
 export default function Home() {
   const [gamePhase, setGamePhase] = useState<GamePhase>('ai_training')
   const [selectedParameters, setSelectedParameters] = useState<string[]>([])
-  const [aiReliability, setAiReliability] = useState(50)
+  const [accuracy, setAccuracy] = useState<ScaleValue>(2)
+  const [trust, setTrust] = useState<ScaleValue>(3)
+  const [crimeRate, setCrimeRate] = useState<ScaleValue>(3.5)
   const [canRetrain, setCanRetrain] = useState(false)
   const [selectedPolicy, setSelectedPolicy] = useState<string>('')
   const [gameReport, setGameReport] = useState<any>(null)
@@ -24,14 +26,16 @@ export default function Home() {
 
   const handleSelectionChange = (parameters: string[]) => {
     setSelectedParameters(parameters)
-    const reliability = calculateAIReliability(parameters)
-    setAiReliability(reliability)
-    setCanRetrain(!isAIReliabilitySuitable(reliability))
+    const metrics = calculateAIMetrics(parameters)
+    setAccuracy(metrics.accuracy)
+    setTrust(metrics.trust)
+    setCrimeRate(metrics.crimeRate)
+    setCanRetrain(!isAIMetricsSuitable(metrics.accuracy, metrics.trust))
   }
 
   const handleAITrainingConfirm = () => {
     console.log("选择的参数:", selectedParameters)
-    console.log("AI可信度:", aiReliability)
+    console.log("AI指标:", { accuracy, trust, crimeRate })
     console.log("需要重新训练:", canRetrain)
     setGamePhase('policy_selection')
   }
@@ -44,7 +48,7 @@ export default function Home() {
     console.log("选择的政策:", selectedPolicy)
     
     // 生成游戏报告
-    const report = generateGameReport(selectedParameters, selectedPolicy, aiReliability)
+    const report = generateGameReport(selectedParameters, selectedPolicy, accuracy)
     setGameReport(report)
     
     // 确定结局
@@ -57,7 +61,9 @@ export default function Home() {
   const handleRestart = () => {
     setGamePhase('ai_training')
     setSelectedParameters([])
-    setAiReliability(50)
+    setAccuracy(2)
+    setTrust(3)
+    setCrimeRate(3.5)
     setCanRetrain(false)
     setSelectedPolicy('')
     setGameReport(null)
@@ -70,7 +76,9 @@ export default function Home() {
             return (
               <AITrainingPhase
                 selectedParameters={selectedParameters}
-                aiReliability={aiReliability}
+                accuracy={accuracy}
+                trust={trust}
+                crimeRate={crimeRate}
                 canRetrain={canRetrain}
                 onSelectionChange={handleSelectionChange}
                 onConfirm={handleAITrainingConfirm}

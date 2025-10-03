@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { BarChart3, TrendingUp, TrendingDown, Minus, RefreshCw, ArrowRight } from "lucide-react"
-import { GameReport } from "@/types/game"
+import { GameReport } from "@/types"
 
 interface GameReportPhaseProps {
   report: GameReport

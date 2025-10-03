@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { RotateCcw, Trophy, AlertTriangle, Scale, Target, Globe } from "lucide-react"
-import { GameEnding } from "@/types/game"
+import { GameEnding } from "@/types"
 
 interface GameEndingPhaseProps {
   ending: GameEnding

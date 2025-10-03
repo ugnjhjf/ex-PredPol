@@ -1,13 +1,13 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { GameState, GamePhase } from "@/types/game"
+import { GameState, GamePhase } from "@/types"
 import { 
   createInitialGameState, 
   updateGameState, 
   advanceToNextPhase,
-  calculateAIReliability,
-  isAIReliabilitySuitable,
+  calculateAIMetrics,
+  isAIMetricsSuitable,
   generateGameReport,
   retrainAI,
   completeGame
@@ -45,8 +45,8 @@ export default function GameSimulation() {
   const handleAITrainingSelection = (selectedParameters: string[]) => {
     if (!gameState) return
     
-    const aiReliability = calculateAIReliability(selectedParameters)
-    const canRetrain = !isAIReliabilitySuitable(aiReliability)
+    const metrics = calculateAIMetrics(selectedParameters)
+    const canRetrain = !isAIMetricsSuitable(metrics.accuracy, metrics.trust)
     
     setGameState(prevState => {
       if (!prevState) return prevState
@@ -54,7 +54,9 @@ export default function GameSimulation() {
         aiTraining: {
           ...prevState.aiTraining,
           selectedOptions: selectedParameters,
-          aiReliability,
+          accuracy: metrics.accuracy,
+          trust: metrics.trust,
+          crimeRate: metrics.crimeRate,
           canRetrain
         }
       })
@@ -112,7 +114,11 @@ export default function GameSimulation() {
   const confirmPolicySelection = () => {
     if (!gameState || !gameState.policySelection.selectedPolicy) return
     
-    const report = generateGameReport(gameState.aiTraining, gameState.policySelection)
+    const report = generateGameReport(
+      gameState.aiTraining.selectedOptions,
+      gameState.policySelection.selectedPolicy,
+      gameState.aiTraining.accuracy
+    )
     setGameState(prevState => {
       if (!prevState) return prevState
       return updateGameState(prevState, {
@@ -127,8 +133,13 @@ export default function GameSimulation() {
     if (!gameState || !gameState.report) return
     
     setGameState(prevState => {
-      if (!prevState) return prevState
-      return completeGame(prevState)
+      if (!prevState || !prevState.report) return prevState
+      const ending = completeGame(prevState.report)
+      return {
+        ...prevState,
+        ending,
+        phase: 'ending' as const
+      }
     })
   }
 
@@ -147,7 +158,9 @@ export default function GameSimulation() {
         return (
           <AITrainingPhase
             selectedParameters={gameState.aiTraining.selectedOptions}
-            aiReliability={gameState.aiTraining.aiReliability}
+            accuracy={gameState.aiTraining.accuracy}
+            trust={gameState.aiTraining.trust}
+            crimeRate={gameState.aiTraining.crimeRate}
             canRetrain={gameState.aiTraining.canRetrain}
             onSelectionChange={handleAITrainingSelection}
             onConfirm={confirmAITraining}
@@ -199,8 +212,8 @@ export default function GameSimulation() {
           <DialogTitle>AI可信度不理想</DialogTitle>
           <div className="space-y-4">
             <p>
-              当前AI可信度为 <strong>{gameState?.aiTraining.aiReliability.toFixed(1) || 0}%</strong>，
-              建议范围是70-85%。
+              当前AI指标为 <strong>准确度: {gameState?.aiTraining.accuracy || 0}, 信任度: {gameState?.aiTraining.trust || 0}</strong>，
+              建议准确度和信任度都达到3以上。
             </p>
             <p>您希望：</p>
             <div className="flex gap-2">

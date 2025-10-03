@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { CheckCircle2, AlertTriangle, Shield, Info } from "lucide-react"
-import { PolicyOption } from "@/types/game"
+import { PolicyOption } from "@/types"
 
 interface PolicySelectionPhaseProps {
   selectedPolicy: string | null

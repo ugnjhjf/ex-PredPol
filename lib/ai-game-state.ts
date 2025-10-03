@@ -9,8 +9,9 @@ import {
   AI_TRAINING_PARAMETERS,
   POLICY_OPTIONS,
   GAME_ENDINGS,
-  ENDING_SCORE_RANGES
-} from '@/types/game'
+  ENDING_SCORE_RANGES,
+  ScaleValue
+} from '@/types'
 
 // 初始游戏状态
 export const createInitialGameState = (): GameState => ({
@@ -19,7 +20,9 @@ export const createInitialGameState = (): GameState => ({
   maxRounds: 3,
   aiTraining: {
     selectedOptions: [],
-    aiReliability: 0,
+    accuracy: 2,
+    trust: 3,
+    crimeRate: 3.5,
     canRetrain: false,
     trainingHistory: []
   },
@@ -32,29 +35,41 @@ export const createInitialGameState = (): GameState => ({
   gameCompleted: false
 })
 
-// 计算AI可信度（基于选择的参数）
-export const calculateAIReliability = (selectedParameters: string[]): number => {
-  // 如果选择不使用AI技术，返回0
-  if (selectedParameters.includes('no_ai')) return 0
+// 计算AI三个核心指标（基于选择的数据集）
+export const calculateAIMetrics = (selectedParameters: string[]) => {
+  // 如果选择不使用AI技术，返回固定值
+  if (selectedParameters.includes('no_ai')) {
+    return { accuracy: 2 as ScaleValue, trust: 5 as ScaleValue, crimeRate: 4 as ScaleValue }
+  }
   
-  // 如果没有选择任何参数，返回基础可信度
-  if (selectedParameters.length === 0) return 50
-  
+  // 如果没有选择任何参数，返回初始值
+  if (selectedParameters.length === 0) {
+    return { accuracy: 2 as ScaleValue, trust: 3 as ScaleValue, crimeRate: 3.5 as ScaleValue }
+  }
+
   const parameters = AI_TRAINING_PARAMETERS.filter(param => selectedParameters.includes(param.id))
-  const totalAccuracy = parameters.reduce((sum, param) => sum + param.impact.accuracy, 0)
-  const totalFairness = parameters.reduce((sum, param) => sum + param.impact.fairness, 0)
-  const totalTransparency = parameters.reduce((sum, param) => sum + param.impact.transparency, 0)
-  
-  // 基础可信度 + 参数影响
-  const baseReliability = 50
-  const reliability = baseReliability + (totalAccuracy + totalFairness + totalTransparency) / 3
-  
-  return Math.min(100, Math.max(0, reliability))
+  const avgAccuracy = parameters.reduce((sum, param) => sum + param.impact.accuracy, 0) / parameters.length
+  const avgTrust = parameters.reduce((sum, param) => sum + param.impact.trust, 0) / parameters.length
+  const avgCrimeRate = parameters.reduce((sum, param) => sum + param.impact.crimeRate, 0) / parameters.length
+
+  // 将平均值四舍五入到最接近的标度值
+  const roundToScale = (value: number): ScaleValue => {
+    const scaleValues: ScaleValue[] = [1, 2, 2.5, 3, 3.5, 4, 5]
+    return scaleValues.reduce((prev, curr) => 
+      Math.abs(curr - value) < Math.abs(prev - value) ? curr : prev
+    )
+  }
+
+  return {
+    accuracy: roundToScale(avgAccuracy),
+    trust: roundToScale(avgTrust),
+    crimeRate: roundToScale(avgCrimeRate)
+  }
 }
 
-// 检查AI可信度是否合适
-export const isAIReliabilitySuitable = (reliability: number): boolean => {
-  return reliability >= 70 && reliability <= 85
+// 检查AI指标是否合适（基于准确度和信任度）
+export const isAIMetricsSuitable = (accuracy: number, trust: number): boolean => {
+  return accuracy >= 3 && trust >= 3
 }
 
 // 生成游戏报告
@@ -186,14 +201,18 @@ export const retrainAI = (currentState: GameState): GameState => {
     aiTraining: {
       ...currentState.aiTraining,
       selectedOptions: [],
-      aiReliability: 0,
+      accuracy: 2,
+      trust: 3,
+      crimeRate: 3.5,
       canRetrain: false,
       trainingHistory: [
         ...currentState.aiTraining.trainingHistory,
         {
           round: currentState.currentRound,
           selectedOptions: currentState.aiTraining.selectedOptions,
-          reliability: currentState.aiTraining.aiReliability
+          accuracy: currentState.aiTraining.accuracy,
+          trust: currentState.aiTraining.trust,
+          crimeRate: currentState.aiTraining.crimeRate
         }
       ]
     }
