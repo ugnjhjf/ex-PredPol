@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { CheckCircle2, AlertCircle, Info, AlertTriangle, Settings } from "lucide-react"
+import { CheckCircle2, AlertCircle, Info, AlertTriangle, Settings, Database, Shield, Users, Building2, CreditCard, Camera, FileText, TrendingUp, TrendingDown, Minus } from "lucide-react"
 import { AI_TRAINING_PARAMETERS, getScaleLabel, ScaleValue } from "@/types"
 import { calculateAIMetrics, isAIMetricsSuitable } from "@/lib/ai-game-state"
 import GameSettings from "./game-settings"
@@ -88,6 +88,46 @@ export default function AITrainingPhase({
     }
   }
 
+  // 获取数据集图标
+  const getDatasetIcon = (parameterId: string) => {
+    const iconMap: Record<string, React.ReactNode> = {
+      'recidivism_risk': <FileText className="h-6 w-6" />,
+      'facial_surveillance': <Camera className="h-6 w-6" />,
+      'stop_frisk_records': <Users className="h-6 w-6" />,
+      'employment_records': <Building2 className="h-6 w-6" />,
+      'credit_scoring': <CreditCard className="h-6 w-6" />,
+      'no_ai': <Shield className="h-6 w-6" />
+    }
+    return iconMap[parameterId] || <Database className="h-6 w-6" />
+  }
+
+  // 获取分类颜色
+  const getCategoryColor = (category: string) => {
+    const colorMap: Record<string, string> = {
+      'demographic': 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900 dark:text-red-300 dark:border-red-700',
+      'socioeconomic': 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900 dark:text-orange-300 dark:border-orange-700',
+      'community': 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900 dark:text-green-300 dark:border-green-700'
+    }
+    return colorMap[category] || 'bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-900 dark:text-gray-300 dark:border-gray-700'
+  }
+
+  // 获取分类标签
+  const getCategoryLabel = (category: string) => {
+    const labelMap: Record<string, string> = {
+      'demographic': '人口统计',
+      'socioeconomic': '社会经济',
+      'community': '社区数据'
+    }
+    return labelMap[category] || '其他'
+  }
+
+  // 获取影响指标图标
+  const getImpactIcon = (value: number) => {
+    if (value > 0) return <TrendingUp className="h-3 w-3 text-green-600" />
+    if (value < 0) return <TrendingDown className="h-3 w-3 text-red-600" />
+    return <Minus className="h-3 w-3 text-gray-600" />
+  }
+
   // 计算选择数据集组合后的指标值
   const calculateDatasetCombinationImpact = () => {
     const baseAccuracy = 2
@@ -154,56 +194,94 @@ export default function AITrainingPhase({
 
         {/* 三个核心指标 - 与下方对齐 */}
         <div className="mb-8">
-          <Card>
+          <Card className="bg-gradient-to-r from-slate-50 to-blue-50 dark:from-slate-900 dark:to-blue-950 border-slate-200 dark:border-slate-700">
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center justify-center gap-2">
-                <div className="w-6 h-6 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
-                  <span className="text-blue-600 dark:text-blue-400 text-xs">📊</span>
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                  <TrendingUp className="h-4 w-4 text-white" />
                 </div>
                 AI系统核心指标
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
                 {/* 准确度 */}
-                <div className="text-center">
-                  <div className="text-sm text-slate-500 mb-2">准确度</div>
-                  <div className={`text-3xl font-bold ${getMetricColor(accuracy, 'accuracy')} mb-2`}>
+                <div className="text-center group">
+                  <div className="flex items-center justify-center gap-2 mb-3">
+                    <div className="w-8 h-8 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
+                      <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
+                    </div>
+                    <span className="text-sm font-medium text-slate-600 dark:text-slate-400">准确度</span>
+                  </div>
+                  <div className={`text-4xl font-bold ${getMetricColor(accuracy, 'accuracy')} mb-2 transition-all duration-300 group-hover:scale-110`}>
                     {accuracy}
                   </div>
-                  <div className={`text-sm font-medium ${getMetricColor(accuracy, 'accuracy')}`}>
+                  <div className={`text-sm font-medium ${getMetricColor(accuracy, 'accuracy')} mb-4`}>
                     {getScaleLabel(accuracy)}
                   </div>
-                  <Progress value={(accuracy - 1) / 4 * 100} className="h-2 mt-2" />
+                  <div className="relative">
+                    <Progress 
+                      value={(accuracy - 1) / 4 * 100} 
+                      className="h-3 bg-slate-200 dark:bg-slate-700" 
+                    />
+                    <div className="absolute inset-0 rounded-full bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 opacity-20" />
+                  </div>
                 </div>
 
                 {/* 信任度 */}
-                <div className="text-center">
-                  <div className="text-sm text-slate-500 mb-2">信任度</div>
-                  <div className={`text-3xl font-bold ${getMetricColor(trust, 'trust')} mb-2`}>
+                <div className="text-center group">
+                  <div className="flex items-center justify-center gap-2 mb-3">
+                    <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
+                      <Shield className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <span className="text-sm font-medium text-slate-600 dark:text-slate-400">信任度</span>
+                  </div>
+                  <div className={`text-4xl font-bold ${getMetricColor(trust, 'trust')} mb-2 transition-all duration-300 group-hover:scale-110`}>
                     {trust}
                   </div>
-                  <div className={`text-sm font-medium ${getMetricColor(trust, 'trust')}`}>
+                  <div className={`text-sm font-medium ${getMetricColor(trust, 'trust')} mb-4`}>
                     {getScaleLabel(trust)}
                   </div>
-                  <Progress value={(trust - 1) / 4 * 100} className="h-2 mt-2" />
+                  <div className="relative">
+                    <Progress 
+                      value={(trust - 1) / 4 * 100} 
+                      className="h-3 bg-slate-200 dark:bg-slate-700" 
+                    />
+                    <div className="absolute inset-0 rounded-full bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 opacity-20" />
+                  </div>
                 </div>
 
                 {/* 犯罪率 */}
-                <div className="text-center">
-                  <div className="text-sm text-slate-500 mb-2">犯罪率</div>
-                  <div className={`text-3xl font-bold ${getMetricColor(crimeRate, 'crimeRate')} mb-2`}>
+                <div className="text-center group">
+                  <div className="flex items-center justify-center gap-2 mb-3">
+                    <div className="w-8 h-8 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center">
+                      <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                    </div>
+                    <span className="text-sm font-medium text-slate-600 dark:text-slate-400">犯罪率</span>
+                  </div>
+                  <div className={`text-4xl font-bold ${getMetricColor(crimeRate, 'crimeRate')} mb-2 transition-all duration-300 group-hover:scale-110`}>
                     {crimeRate}
                   </div>
-                  <div className={`text-sm font-medium ${getMetricColor(crimeRate, 'crimeRate')}`}>
+                  <div className={`text-sm font-medium ${getMetricColor(crimeRate, 'crimeRate')} mb-4`}>
                     {getScaleLabel(crimeRate)}
                   </div>
-                  <Progress value={(crimeRate - 1) / 4 * 100} className="h-2 mt-2" />
+                  <div className="relative">
+                    <Progress 
+                      value={(crimeRate - 1) / 4 * 100} 
+                      className="h-3 bg-slate-200 dark:bg-slate-700" 
+                    />
+                    <div className="absolute inset-0 rounded-full bg-gradient-to-r from-green-500 via-yellow-500 to-red-500 opacity-20" />
+                  </div>
                 </div>
               </div>
               {shouldRetrain && (
-                <div className="text-center text-xs text-orange-600 mt-4">
-                  建议重新训练
+                <div className="mt-6 p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg">
+                  <div className="flex items-center justify-center gap-2">
+                    <AlertTriangle className="h-4 w-4 text-orange-600" />
+                    <span className="text-sm font-medium text-orange-800 dark:text-orange-200">
+                      建议重新训练 - 当前指标组合可能不够理想
+                    </span>
+                  </div>
                 </div>
               )}
             </CardContent>
@@ -214,15 +292,51 @@ export default function AITrainingPhase({
         <div className="w-full">
             <Card>
               <CardHeader>
-                <CardTitle>训练参数选择</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Database className="h-5 w-5 text-blue-600" />
+                  训练参数选择
+                </CardTitle>
                 <CardDescription>
                   选择用于训练AI模型的参数。不同的参数选择会影响AI的准确性、公平性和透明度。
                 </CardDescription>
               </CardHeader>
               <CardContent>
+                {/* 分类统计 */}
+                <div className="mb-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-medium text-slate-700 dark:text-slate-300">数据集分类</h3>
+                    <div className="text-xs text-slate-500">
+                      共 {AI_TRAINING_PARAMETERS.length} 个数据集
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {['demographic', 'socioeconomic', 'community'].map((category) => {
+                      const count = AI_TRAINING_PARAMETERS.filter(p => p.category === category).length
+                      const selectedCount = AI_TRAINING_PARAMETERS.filter(p => p.category === category && selectedParameters.includes(p.id)).length
+                      return (
+                        <div key={category} className={`p-3 rounded-lg border ${getCategoryColor(category)}`}>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium">{getCategoryLabel(category)}</span>
+                            <span className="text-xs">
+                              {selectedCount}/{count} 已选
+                            </span>
+                          </div>
+                          <div className="mt-1">
+                            <div className="w-full bg-white/50 dark:bg-black/20 rounded-full h-1.5">
+                              <div 
+                                className="bg-current h-1.5 rounded-full transition-all duration-300"
+                                style={{ width: `${count > 0 ? (selectedCount / count) * 100 : 0}%` }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
 
                 {/* 训练参数选项 */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6">
                   {AI_TRAINING_PARAMETERS.map((parameter) => {
                     const isSelected = selectedParameters.includes(parameter.id)
                     const isHighRisk = parameter.impact.trust <= 2
@@ -231,100 +345,124 @@ export default function AITrainingPhase({
                     return (
                       <Card
                         key={parameter.id}
-                        className={`cursor-pointer transition-all duration-200 ${
+                        className={`group cursor-pointer transition-all duration-300 transform relative overflow-hidden ${
                           isSelected
-                            ? "ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-950"
+                            ? "ring-2 ring-blue-500 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 shadow-lg scale-105"
                             : isDisabled
                             ? "opacity-50 cursor-not-allowed"
-                            : "hover:shadow-md hover:scale-105"
-                        } ${isHighRisk ? "border-red-200 dark:border-red-800" : ""}`}
+                            : "hover:shadow-xl hover:scale-105 hover:bg-gradient-to-br hover:from-slate-50 hover:to-slate-100 dark:hover:from-slate-800 dark:hover:to-slate-700"
+                        } ${isHighRisk ? "border-red-200 dark:border-red-800" : "border-slate-200 dark:border-slate-700"}`}
                         onClick={() => !isDisabled && handleParameterClick(parameter.id)}
                         onMouseEnter={() => setHoveredOption(parameter.id)}
                         onMouseLeave={() => setHoveredOption(null)}
                       >
-                        <CardHeader className="pb-3">
-                          <div className="flex items-center gap-4">
-                            {/* 图片框 */}
+                        
+                        {/* 悬停效果覆盖层 */}
+                        {hoveredOption === parameter.id && !isSelected && !isDisabled && (
+                          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5 pointer-events-none" />
+                        )}
+                        <CardHeader className="pb-4">
+                          <div className="flex flex-col sm:flex-row items-start gap-4">
+                            {/* 图标区域 */}
                             <div className={cn(
-                              "w-16 h-16 rounded-lg border-2 flex items-center justify-center flex-shrink-0",
+                              "w-12 h-12 sm:w-16 sm:h-16 rounded-xl border-2 flex items-center justify-center flex-shrink-0 transition-all duration-300 group-hover:scale-110 mx-auto sm:mx-0",
                               {
-                                "border-blue-500 bg-blue-50": isSelected,
-                                "border-gray-300 bg-gray-50": !isSelected && !isDisabled,
-                                "border-gray-200 bg-gray-100": isDisabled
+                                "border-blue-500 bg-gradient-to-br from-blue-100 to-blue-200 text-blue-700 shadow-lg": isSelected,
+                                "border-slate-300 bg-gradient-to-br from-slate-100 to-slate-200 text-slate-600 group-hover:border-blue-300 group-hover:bg-gradient-to-br group-hover:from-blue-50 group-hover:to-blue-100 group-hover:text-blue-700": !isSelected && !isDisabled,
+                                "border-slate-200 bg-slate-100 text-slate-400": isDisabled
                               }
                             )}>
-                              <div className="w-12 h-12 bg-gray-200 rounded-md flex items-center justify-center">
-                                <span className="text-xs text-gray-500">图片</span>
+                              <div className="transition-transform duration-300 group-hover:rotate-12">
+                                {getDatasetIcon(parameter.id)}
                               </div>
                             </div>
                             
-                            <div className="flex-1">
-                              <div className="flex items-center justify-between">
-                                <CardTitle className="text-lg">{parameter.name}</CardTitle>
+                            <div className="flex-1 min-w-0 w-full sm:w-auto">
+                              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2 gap-2">
+                                <div className="flex-1 min-w-0">
+                                  <CardTitle className="text-base sm:text-lg font-semibold text-slate-900 dark:text-slate-100 mb-1 text-center sm:text-left">
+                                    {parameter.name}
+                                  </CardTitle>
+                                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-2">
+                                    <Badge 
+                                      variant="outline" 
+                                      className={`text-xs ${getCategoryColor(parameter.category)}`}
+                                    >
+                                      {getCategoryLabel(parameter.category)}
+                                    </Badge>
+                                    {isHighRisk && (
+                                      <Badge variant="destructive" className="text-xs">
+                                        <AlertTriangle className="h-3 w-3 mr-1" />
+                                        高风险
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </div>
                                 <div className="flex items-center gap-2">
-                                  {isHighRisk && (
-                                    <AlertTriangle className="h-4 w-4 text-red-500" />
-                                  )}
                                   {isSelected && (
-                                    <CheckCircle2 className="h-5 w-5 text-blue-600" />
+                                    <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center animate-bounce">
+                                      <CheckCircle2 className="h-4 w-4 text-white" />
+                                    </div>
                                   )}
                                 </div>
                               </div>
-                              <CardDescription className="text-sm">
+                              <CardDescription className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed text-center sm:text-left">
                                 {parameter.description}
                               </CardDescription>
                             </div>
                           </div>
                         </CardHeader>
+                        
                         <CardContent className="pt-0">
-                          {/* 影响指标 */}
+                          {/* 影响指标 - 开发者模式 */}
                           {settings.developerMode && (
-                            <div className="grid grid-cols-3 gap-2 mb-3">
-                              <div className="text-center">
-                                <div className="text-xs text-slate-500">准确度变化</div>
-                                <div className={`text-sm font-bold ${parameter.impact.accuracy > 0 ? 'text-green-600' : parameter.impact.accuracy < 0 ? 'text-red-600' : 'text-gray-600'}`}>
-                                  {parameter.impact.accuracy > 0 ? '+' : ''}{parameter.impact.accuracy}
+                            <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-4 mb-4">
+                              <h4 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">指标影响</h4>
+                              <div className="grid grid-cols-3 gap-4">
+                                <div className="text-center">
+                                  <div className="flex items-center justify-center gap-1 mb-1">
+                                    {getImpactIcon(parameter.impact.accuracy)}
+                                    <span className="text-xs text-slate-500">准确度</span>
+                                  </div>
+                                  <div className={`text-lg font-bold ${parameter.impact.accuracy > 0 ? 'text-green-600' : parameter.impact.accuracy < 0 ? 'text-red-600' : 'text-gray-600'}`}>
+                                    {parameter.impact.accuracy > 0 ? '+' : ''}{parameter.impact.accuracy}
+                                  </div>
                                 </div>
-                                <div className="text-xs text-slate-400">
-                                  {parameter.impact.accuracy > 0 ? '提升' : parameter.impact.accuracy < 0 ? '降低' : '无变化'}
+                                <div className="text-center">
+                                  <div className="flex items-center justify-center gap-1 mb-1">
+                                    {getImpactIcon(parameter.impact.trust)}
+                                    <span className="text-xs text-slate-500">信任度</span>
+                                  </div>
+                                  <div className={`text-lg font-bold ${parameter.impact.trust > 0 ? 'text-green-600' : parameter.impact.trust < 0 ? 'text-red-600' : 'text-gray-600'}`}>
+                                    {parameter.impact.trust > 0 ? '+' : ''}{parameter.impact.trust}
+                                  </div>
                                 </div>
-                              </div>
-                              <div className="text-center">
-                                <div className="text-xs text-slate-500">信任度变化</div>
-                                <div className={`text-sm font-bold ${parameter.impact.trust > 0 ? 'text-green-600' : parameter.impact.trust < 0 ? 'text-red-600' : 'text-gray-600'}`}>
-                                  {parameter.impact.trust > 0 ? '+' : ''}{parameter.impact.trust}
-                                </div>
-                                <div className="text-xs text-slate-400">
-                                  {parameter.impact.trust > 0 ? '提升' : parameter.impact.trust < 0 ? '降低' : '无变化'}
-                                </div>
-                              </div>
-                              <div className="text-center">
-                                <div className="text-xs text-slate-500">犯罪率变化</div>
-                                <div className={`text-sm font-bold ${parameter.impact.crimeRate < 0 ? 'text-green-600' : parameter.impact.crimeRate > 0 ? 'text-red-600' : 'text-gray-600'}`}>
-                                  {parameter.impact.crimeRate > 0 ? '+' : ''}{parameter.impact.crimeRate}
-                                </div>
-                                <div className="text-xs text-slate-400">
-                                  {parameter.impact.crimeRate < 0 ? '降低' : parameter.impact.crimeRate > 0 ? '上升' : '无变化'}
+                                <div className="text-center">
+                                  <div className="flex items-center justify-center gap-1 mb-1">
+                                    {getImpactIcon(-parameter.impact.crimeRate)}
+                                    <span className="text-xs text-slate-500">犯罪率</span>
+                                  </div>
+                                  <div className={`text-lg font-bold ${parameter.impact.crimeRate < 0 ? 'text-green-600' : parameter.impact.crimeRate > 0 ? 'text-red-600' : 'text-gray-600'}`}>
+                                    {parameter.impact.crimeRate > 0 ? '+' : ''}{parameter.impact.crimeRate}
+                                  </div>
                                 </div>
                               </div>
                             </div>
                           )}
 
                           {/* 伦理风险提示 */}
-                          <div className="space-y-2">
-                            <Badge 
-                              variant="outline" 
-                              className={`text-xs w-full ${
-                                isHighRisk 
-                                  ? 'bg-red-100 text-red-700 border-red-300' 
-                                  : 'bg-yellow-100 text-yellow-700 border-yellow-300'
-                              }`}
-                            >
-                              {isHighRisk ? '高风险' : '中等风险'}
-                            </Badge>
-                            <p className="text-xs text-muted-foreground">
-                              {parameter.ethicalConcern}
-                            </p>
+                          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
+                            <div className="flex items-start gap-2">
+                              <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                              <div>
+                                <p className="text-xs font-medium text-amber-800 dark:text-amber-200 mb-1">
+                                  伦理考量
+                                </p>
+                                <p className="text-xs text-amber-700 dark:text-amber-300 leading-relaxed">
+                                  {parameter.ethicalConcern}
+                                </p>
+                              </div>
+                            </div>
                           </div>
                         </CardContent>
                       </Card>
@@ -509,7 +647,7 @@ export default function AITrainingPhase({
 
         {/* Dashboard Footer */}
         <div className="mt-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {/* 选择状态 */}
             <Card>
               <CardHeader className="pb-3">
@@ -538,7 +676,7 @@ export default function AITrainingPhase({
             </Card>
 
             {/* 教育提示 */}
-            <Card className="lg:col-span-2">
+            <Card className="md:col-span-2">
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg flex items-center gap-2">
                   <div className="w-6 h-6 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
