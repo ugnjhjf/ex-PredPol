@@ -3,6 +3,7 @@
 import AITrainingPhase from "@/components/ai-training-phase"
 import PolicySelectionPhase from "@/components/policy-selection-phase"
 import GameEndingPhase from "@/components/game-ending-phase"
+import GameProgress from "@/components/game-progress"
 import { useState } from "react"
 import { calculateAIMetrics, isAIMetricsSuitable, generateGameReport, completeGame } from "@/lib/ai-game-state"
 import { AI_TRAINING_PARAMETERS, POLICY_OPTIONS, GAME_ENDINGS, ScaleValue } from "@/types"
@@ -19,6 +20,7 @@ export default function Home() {
   const [selectedPolicies, setSelectedPolicies] = useState<string[]>([])
   const [gameReport, setGameReport] = useState<any>(null)
   const [gameEnding, setGameEnding] = useState<any>(null)
+  const [completedPhases, setCompletedPhases] = useState<GamePhase[]>([])
   const [gameSettings, setGameSettings] = useState({
     showDetailedValues: false,
     educationMode: false
@@ -37,6 +39,7 @@ export default function Home() {
     console.log("选择的参数:", selectedParameters)
     console.log("AI指标:", { accuracy, trust, crimeRate })
     console.log("需要重新训练:", canRetrain)
+    setCompletedPhases(prev => [...prev, 'ai_training'])
     setGamePhase('policy_selection')
   }
 
@@ -55,7 +58,17 @@ export default function Home() {
     const ending = completeGame(report)
     setGameEnding(ending)
     
+    setCompletedPhases(prev => [...prev, 'policy_selection'])
     setGamePhase('ending')
+  }
+
+  const handlePhaseClick = (phase: GamePhase) => {
+    // 只允许导航到已完成的阶段或当前阶段
+    if (phase === 'ai_training' || 
+        (phase === 'policy_selection' && completedPhases.includes('ai_training')) ||
+        (phase === 'ending' && completedPhases.includes('policy_selection'))) {
+      setGamePhase(phase)
+    }
   }
 
   const handleRestart = () => {
@@ -68,6 +81,7 @@ export default function Home() {
     setSelectedPolicies([])
     setGameReport(null)
     setGameEnding(null)
+    setCompletedPhases([])
   }
 
   const renderCurrentPhase = () => {
@@ -115,6 +129,15 @@ export default function Home() {
 
   return (
     <main className="container mx-auto p-4 max-h-screen">
+      {/* 进度条 */}
+      <GameProgress
+        currentPhase={gamePhase}
+        onPhaseClick={handlePhaseClick}
+        completedPhases={completedPhases}
+        className="mb-6"
+      />
+      
+      {/* 当前阶段内容 */}
       {renderCurrentPhase()}
     </main>
   )
