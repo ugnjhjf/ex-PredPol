@@ -7,8 +7,7 @@ import { GameReport, GameEnding } from './game-report'
 export type GamePhase = 'ai_training' | 'policy_selection' | 'report' | 'ending'
 
 export interface GameSettings {
-  showDetailedValues: boolean
-  educationMode: boolean
+  developerMode: boolean
 }
 
 export interface GameState {

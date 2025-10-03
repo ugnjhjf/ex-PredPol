@@ -9,6 +9,7 @@ import { CheckCircle2, AlertCircle, Info, AlertTriangle, Settings } from "lucide
 import { AI_TRAINING_PARAMETERS, getScaleLabel, ScaleValue } from "@/types"
 import { calculateAIMetrics, isAIMetricsSuitable } from "@/lib/ai-game-state"
 import GameSettings from "./game-settings"
+import { cn } from "@/lib/utils"
 
 interface AITrainingPhaseProps {
   selectedParameters: string[]
@@ -19,10 +20,9 @@ interface AITrainingPhaseProps {
   onSelectionChange: (parameters: string[]) => void
   onConfirm: () => void
   settings?: {
-    showDetailedValues: boolean
-    educationMode: boolean
+    developerMode: boolean
   }
-  onSettingsChange?: (settings: { showDetailedValues: boolean; educationMode: boolean }) => void
+  onSettingsChange?: (settings: { developerMode: boolean }) => void
 }
 
 export default function AITrainingPhase({
@@ -33,7 +33,7 @@ export default function AITrainingPhase({
   canRetrain,
   onSelectionChange,
   onConfirm,
-  settings = { showDetailedValues: false, educationMode: false },
+  settings = { developerMode: false },
   onSettingsChange
 }: AITrainingPhaseProps) {
   const [hoveredOption, setHoveredOption] = useState<string | null>(null)
@@ -130,7 +130,7 @@ export default function AITrainingPhase({
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-4xl font-bold text-slate-900 dark:text-slate-100">
-                AI模型训练中心
+                模型训练
               </h1>
               <p className="text-lg text-slate-600 dark:text-slate-400 mt-2">
                 选择训练参数，构建您的AI系统
@@ -243,57 +243,72 @@ export default function AITrainingPhase({
                         onMouseLeave={() => setHoveredOption(null)}
                       >
                         <CardHeader className="pb-3">
-                          <div className="flex items-center justify-between">
-                            <CardTitle className="text-lg">{parameter.name}</CardTitle>
-                            <div className="flex items-center gap-2">
-                              {isHighRisk && (
-                                <AlertTriangle className="h-4 w-4 text-red-500" />
-                              )}
-                              {isSelected && (
-                                <CheckCircle2 className="h-5 w-5 text-blue-600" />
-                              )}
+                          <div className="flex items-center gap-4">
+                            {/* 图片框 */}
+                            <div className={cn(
+                              "w-16 h-16 rounded-lg border-2 flex items-center justify-center flex-shrink-0",
+                              {
+                                "border-blue-500 bg-blue-50": isSelected,
+                                "border-gray-300 bg-gray-50": !isSelected && !isDisabled,
+                                "border-gray-200 bg-gray-100": isDisabled
+                              }
+                            )}>
+                              <div className="w-12 h-12 bg-gray-200 rounded-md flex items-center justify-center">
+                                <span className="text-xs text-gray-500">图片</span>
+                              </div>
+                            </div>
+                            
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between">
+                                <CardTitle className="text-lg">{parameter.name}</CardTitle>
+                                <div className="flex items-center gap-2">
+                                  {isHighRisk && (
+                                    <AlertTriangle className="h-4 w-4 text-red-500" />
+                                  )}
+                                  {isSelected && (
+                                    <CheckCircle2 className="h-5 w-5 text-blue-600" />
+                                  )}
+                                </div>
+                              </div>
+                              <CardDescription className="text-sm">
+                                {parameter.description}
+                              </CardDescription>
                             </div>
                           </div>
-                          <CardDescription className="text-sm">
-                            {parameter.description}
-                          </CardDescription>
                         </CardHeader>
                         <CardContent className="pt-0">
                           {/* 影响指标 */}
-                          {settings.showDetailedValues && (() => {
-                            const impact = calculateDatasetCombinationImpact()
-                            return (
-                              <div className="grid grid-cols-3 gap-2 mb-3">
-                                <div className="text-center">
-                                  <div className="text-xs text-slate-500">准确度</div>
-                                  <div className={`text-sm font-bold ${getMetricColor(accuracy, 'accuracy')}`}>
-                                    {impact.accuracy.toFixed(1)}
-                                  </div>
-                                  <div className="text-xs text-slate-400">
-                                    当前: {accuracy}
-                                  </div>
+                          {settings.developerMode && (
+                            <div className="grid grid-cols-3 gap-2 mb-3">
+                              <div className="text-center">
+                                <div className="text-xs text-slate-500">准确度变化</div>
+                                <div className={`text-sm font-bold ${parameter.impact.accuracy > 0 ? 'text-green-600' : parameter.impact.accuracy < 0 ? 'text-red-600' : 'text-gray-600'}`}>
+                                  {parameter.impact.accuracy > 0 ? '+' : ''}{parameter.impact.accuracy}
                                 </div>
-                                <div className="text-center">
-                                  <div className="text-xs text-slate-500">信任度</div>
-                                  <div className={`text-sm font-bold ${getMetricColor(trust, 'trust')}`}>
-                                    {impact.trust.toFixed(1)}
-                                  </div>
-                                  <div className="text-xs text-slate-400">
-                                    当前: {trust}
-                                  </div>
-                                </div>
-                                <div className="text-center">
-                                  <div className="text-xs text-slate-500">犯罪率</div>
-                                  <div className={`text-sm font-bold ${getMetricColor(crimeRate, 'crimeRate')}`}>
-                                    {impact.crimeRate.toFixed(1)}
-                                  </div>
-                                  <div className="text-xs text-slate-400">
-                                    当前: {crimeRate}
-                                  </div>
+                                <div className="text-xs text-slate-400">
+                                  {parameter.impact.accuracy > 0 ? '提升' : parameter.impact.accuracy < 0 ? '降低' : '无变化'}
                                 </div>
                               </div>
-                            )
-                          })()}
+                              <div className="text-center">
+                                <div className="text-xs text-slate-500">信任度变化</div>
+                                <div className={`text-sm font-bold ${parameter.impact.trust > 0 ? 'text-green-600' : parameter.impact.trust < 0 ? 'text-red-600' : 'text-gray-600'}`}>
+                                  {parameter.impact.trust > 0 ? '+' : ''}{parameter.impact.trust}
+                                </div>
+                                <div className="text-xs text-slate-400">
+                                  {parameter.impact.trust > 0 ? '提升' : parameter.impact.trust < 0 ? '降低' : '无变化'}
+                                </div>
+                              </div>
+                              <div className="text-center">
+                                <div className="text-xs text-slate-500">犯罪率变化</div>
+                                <div className={`text-sm font-bold ${parameter.impact.crimeRate < 0 ? 'text-green-600' : parameter.impact.crimeRate > 0 ? 'text-red-600' : 'text-gray-600'}`}>
+                                  {parameter.impact.crimeRate > 0 ? '+' : ''}{parameter.impact.crimeRate}
+                                </div>
+                                <div className="text-xs text-slate-400">
+                                  {parameter.impact.crimeRate < 0 ? '降低' : parameter.impact.crimeRate > 0 ? '上升' : '无变化'}
+                                </div>
+                              </div>
+                            </div>
+                          )}
 
                           {/* 伦理风险提示 */}
                           <div className="space-y-2">
@@ -321,8 +336,8 @@ export default function AITrainingPhase({
             </Card>
         </div>
 
-        {/* 教育模式 - 实时计算展示 */}
-        {settings.educationMode && (
+        {/* 开发者模式 - 实时计算展示 */}
+        {settings.developerMode && (
           <div className="mt-8">
             <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 border-blue-200 dark:border-blue-800">
               <CardHeader>
@@ -465,7 +480,7 @@ export default function AITrainingPhase({
                 <p className="text-sm text-muted-foreground mb-3">
                   完全避免使用AI技术，依赖传统警务方法，避免所有AI偏见风险
                 </p>
-                {settings.showDetailedValues && (
+                {settings.developerMode && (
                   <div className="grid grid-cols-3 gap-2 mb-3">
                     <div className="text-center">
                       <div className="text-xs text-slate-500">准确度</div>

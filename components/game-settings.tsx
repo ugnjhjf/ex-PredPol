@@ -9,10 +9,9 @@ import { Settings, BookOpen, Eye, EyeOff } from "lucide-react"
 
 interface GameSettingsProps {
   settings: {
-    showDetailedValues: boolean
-    educationMode: boolean
+    developerMode: boolean
   }
-  onSettingsChange: (settings: { showDetailedValues: boolean; educationMode: boolean }) => void
+  onSettingsChange: (settings: { developerMode: boolean }) => void
   onClose: () => void
 }
 
@@ -26,8 +25,7 @@ export default function GameSettings({ settings, onSettingsChange, onClose }: Ga
 
   const handleReset = () => {
     setLocalSettings({
-      showDetailedValues: false,
-      educationMode: false
+      developerMode: false
     })
   }
 
@@ -44,61 +42,35 @@ export default function GameSettings({ settings, onSettingsChange, onClose }: Ga
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* 教育模式 */}
+          {/* 开发者模式 */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <Label htmlFor="education-mode" className="flex items-center gap-2">
                   <BookOpen className="h-4 w-4" />
-                  教育模式
+                  开发者模式
                 </Label>
                 <p className="text-sm text-muted-foreground">
-                  显示详细的数值影响和计算公式
+                  显示详细的数值影响、计算公式和实时计算结果
                 </p>
               </div>
               <Switch
                 id="education-mode"
-                checked={localSettings.educationMode}
-                onCheckedChange={(checked) => 
-                  setLocalSettings(prev => ({ ...prev, educationMode: checked }))
+                checked={localSettings.developerMode}
+                onCheckedChange={(checked) =>
+                  setLocalSettings(prev => ({ ...prev, developerMode: checked }))
                 }
               />
             </div>
           </div>
 
-          {/* 详细数值显示 */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="detailed-values" className="flex items-center gap-2">
-                  {localSettings.showDetailedValues ? (
-                    <Eye className="h-4 w-4" />
-                  ) : (
-                    <EyeOff className="h-4 w-4" />
-                  )}
-                  显示详细数值
-                </Label>
-                <p className="text-sm text-muted-foreground">
-                  显示参数对准确性、公平性、透明度的具体影响值
-                </p>
-              </div>
-              <Switch
-                id="detailed-values"
-                checked={localSettings.showDetailedValues}
-                onCheckedChange={(checked) => 
-                  setLocalSettings(prev => ({ ...prev, showDetailedValues: checked }))
-                }
-              />
-            </div>
-          </div>
 
           {/* 模式说明 */}
           <div className="space-y-2 p-4 bg-muted rounded-lg">
             <h4 className="font-medium text-sm">模式说明</h4>
             <div className="text-xs text-muted-foreground space-y-1">
               <p><strong>普通模式：</strong>只显示风险等级，保持游戏探索性</p>
-              <p><strong>教育模式：</strong>显示详细数值，适合学习AI伦理</p>
-              <p><strong>详细数值：</strong>显示具体的+/-百分比影响</p>
+              <p><strong>开发者模式：</strong>显示详细数值和计算公式，适合学习AI伦理</p>
             </div>
           </div>
 

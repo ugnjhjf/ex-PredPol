@@ -13,8 +13,7 @@ interface PolicySelectionPhaseProps {
   onSelectionChange: (policyIds: string[]) => void
   onConfirm: () => void
   settings?: {
-    showDetailedValues: boolean
-    educationMode: boolean
+    developerMode: boolean
   }
   // 从AI训练阶段继承的三个指标
   accuracy: ScaleValue
@@ -27,7 +26,7 @@ export default function PolicySelectionPhase({
   availablePolicies,
   onSelectionChange,
   onConfirm,
-  settings = { showDetailedValues: false, educationMode: false },
+  settings = { developerMode: false },
   accuracy,
   trust,
   crimeRate
@@ -257,19 +256,34 @@ export default function PolicySelectionPhase({
                       onClick={() => handlePolicyClick(policy.id)}
             >
               <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                          <CardTitle className="text-lg">{policy.name}</CardTitle>
-                  {isSelected && (
-                            <CheckCircle2 className="h-5 w-5 text-red-600" />
-                  )}
+                <div className="flex items-center gap-4">
+                  {/* 图片框 */}
+                  <div className={`w-16 h-16 rounded-lg border-2 flex items-center justify-center flex-shrink-0 ${
+                    isSelected
+                      ? "border-red-500 bg-red-50"
+                      : "border-gray-300 bg-gray-50"
+                  }`}>
+                    <div className="w-12 h-12 bg-gray-200 rounded-md flex items-center justify-center">
+                      <span className="text-xs text-gray-500">图片</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg">{policy.name}</CardTitle>
+                      {isSelected && (
+                        <CheckCircle2 className="h-5 w-5 text-red-600" />
+                      )}
+                    </div>
+                    <CardDescription className="text-sm">
+                      {policy.description}
+                    </CardDescription>
+                  </div>
                 </div>
-                <CardDescription className="text-sm">
-                  {policy.description}
-                </CardDescription>
               </CardHeader>
                       <CardContent className="pt-0">
                         {/* 影响指标 */}
-                        {settings.showDetailedValues && (
+                        {settings.developerMode && (
                           <div className="grid grid-cols-3 gap-2 mb-3">
                             <div className="text-center">
                               <div className="text-xs text-slate-500">准确度</div>
@@ -345,19 +359,34 @@ export default function PolicySelectionPhase({
                       onClick={() => handlePolicyClick(policy.id)}
                     >
                       <CardHeader className="pb-3">
-                        <div className="flex items-center justify-between">
-                          <CardTitle className="text-lg">{policy.name}</CardTitle>
-                          {isSelected && (
-                            <CheckCircle2 className="h-5 w-5 text-green-600" />
-                          )}
+                        <div className="flex items-center gap-4">
+                          {/* 图片框 */}
+                          <div className={`w-16 h-16 rounded-lg border-2 flex items-center justify-center flex-shrink-0 ${
+                            isSelected
+                              ? "border-green-500 bg-green-50"
+                              : "border-gray-300 bg-gray-50"
+                          }`}>
+                            <div className="w-12 h-12 bg-gray-200 rounded-md flex items-center justify-center">
+                              <span className="text-xs text-gray-500">图片</span>
+                            </div>
+                          </div>
+                          
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between">
+                              <CardTitle className="text-lg">{policy.name}</CardTitle>
+                              {isSelected && (
+                                <CheckCircle2 className="h-5 w-5 text-green-600" />
+                              )}
+                            </div>
+                            <CardDescription className="text-sm">
+                              {policy.description}
+                            </CardDescription>
+                          </div>
                         </div>
-                        <CardDescription className="text-sm">
-                          {policy.description}
-                        </CardDescription>
                       </CardHeader>
                       <CardContent className="pt-0">
                         {/* 影响指标 */}
-                        {settings.showDetailedValues && (
+                        {settings.developerMode && (
                           <div className="grid grid-cols-3 gap-2 mb-3">
                             <div className="text-center">
                               <div className="text-xs text-slate-500">准确度</div>
@@ -423,15 +452,30 @@ export default function PolicySelectionPhase({
                 onClick={() => handlePolicyClick('none')}
               >
                 <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">不使用任何政策</CardTitle>
-                    {selectedPolicies.includes('none') && (
-                      <CheckCircle2 className="h-5 w-5 text-gray-600" />
-                    )}
+                  <div className="flex items-center gap-4">
+                    {/* 图片框 */}
+                    <div className={`w-16 h-16 rounded-lg border-2 flex items-center justify-center flex-shrink-0 ${
+                      selectedPolicies.includes('none')
+                        ? "border-gray-500 bg-gray-50"
+                        : "border-gray-300 bg-gray-50"
+                    }`}>
+                      <div className="w-12 h-12 bg-gray-200 rounded-md flex items-center justify-center">
+                        <span className="text-xs text-gray-500">图片</span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-lg">不使用任何政策</CardTitle>
+                        {selectedPolicies.includes('none') && (
+                          <CheckCircle2 className="h-5 w-5 text-gray-600" />
+                        )}
+                      </div>
+                      <CardDescription className="text-sm">
+                        不实施任何新的执法政策，维持现状
+                      </CardDescription>
+                    </div>
                   </div>
-                  <CardDescription className="text-sm">
-                    不实施任何新的执法政策，维持现状
-                  </CardDescription>
                 </CardHeader>
                 <CardContent className="pt-0">
                   <Badge 

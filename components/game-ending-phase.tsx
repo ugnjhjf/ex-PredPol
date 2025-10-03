@@ -11,8 +11,7 @@ interface GameEndingPhaseProps {
   ending: GameEnding
   onRestart: () => void
   settings?: {
-    showDetailedValues: boolean
-    educationMode: boolean
+    developerMode: boolean
   }
   gameReport?: {
     accuracy: number
@@ -25,7 +24,7 @@ interface GameEndingPhaseProps {
 export default function GameEndingPhase({
   ending,
   onRestart,
-  settings = { showDetailedValues: false, educationMode: false },
+  settings = { developerMode: false },
   gameReport
 }: GameEndingPhaseProps) {
   const [isClient, setIsClient] = useState(false)
@@ -193,8 +192,8 @@ export default function GameEndingPhase({
         </CardContent>
       </Card>
 
-      {/* 教育模式 - 最终得分展示 */}
-      {settings.educationMode && gameReport && (
+      {/* 开发者模式 - 最终得分展示 */}
+      {settings.developerMode && gameReport && (
         <div className="mt-8">
           <Card className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950 dark:to-pink-950 border-purple-200 dark:border-purple-800">
             <CardHeader>

@@ -22,8 +22,7 @@ export default function Home() {
   const [gameEnding, setGameEnding] = useState<any>(null)
   const [completedPhases, setCompletedPhases] = useState<GamePhase[]>([])
   const [gameSettings, setGameSettings] = useState({
-    showDetailedValues: false,
-    educationMode: false
+    developerMode: false
   })
 
   const handleSelectionChange = (parameters: string[]) => {
