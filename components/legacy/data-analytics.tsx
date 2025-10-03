@@ -1,7 +1,7 @@
 "use client"
 
 //import { PopulationPieChart } from "./charts/PopulationPieChart"
-import { MyPieChart,MyLineChart, SingleLineChart,MyStackedChart,IncomeExpensesChart} from "./charts/chart-components"
+import { MyPieChart,MyLineChart, SingleLineChart,MyStackedChart,IncomeExpensesChart} from "../charts/chart-components"
 import { useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"

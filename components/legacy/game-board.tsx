@@ -29,11 +29,11 @@ import {
 } from "@/components/ui/popover"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import CityMap from "./decisions"
-import ActionSelection from "./action-selection"
+import ActionSelection from "./legacy/action-selection"
 import OverallMetrics from "./overall-metrics"
 import GameLog from "./game-log"
 import GameOverview from "./game-overview"
-import { DataAnalytics } from "@/components/data-analytics"
+import { DataAnalytics } from "@/components/legacy/data-analytics"
 
 // Add district styling variables
 const districtColors = {
@@ -99,10 +99,10 @@ export default function GameBoard({
     // When a new round starts, collect special events only from the current round summary
     if (roundSummary && roundSummary.specialEvents && roundSummary.specialEvents.length > 0) {
       // Limit to at most 3 events per round
-      const limitedEvents = roundSummary.specialEvents.slice(0, 3).map(event => ({
+      const limitedEvents = roundSummary.specialEvents.slice(0, 3).map((event, index) => ({
         ...event,
         round: currentRound,
-        timestamp: new Date().toISOString(),
+        timestamp: `${currentRound}-${index}`, // Use stable identifier instead of Date.now()
         read: false
       }))
       
@@ -155,7 +155,7 @@ export default function GameBoard({
   // Handle continue to next round
   const handleContinueToNextRound = () => {
     closeRoundSummary()
-    if (currentRound <= 10) {
+    if (currentRound <= 5) {
       setActiveTab("map") // Switch to map tab for the next round
     }
   }
@@ -205,7 +205,7 @@ export default function GameBoard({
         <div className="flex items-center gap-4">
           <Badge variant="outline" className="text-lg px-3 py-1 flex items-center gap-1.5">
             <Clock className="h-5 w-5" />
-            Round: {currentRound}/10
+            Round: {currentRound}/5
           </Badge>
           
           {/* Add budget badge */}
